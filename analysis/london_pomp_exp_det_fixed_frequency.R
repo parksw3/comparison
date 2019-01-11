@@ -3,7 +3,7 @@ library(dplyr)
 library(tsiR)
 library(pomp)
 
-source("../R/fitfun_pomp_tsir_fixed_det.R")
+source("../R/fitfun_pomp_exp_fixed_det.R")
 source("../R/basis.R")
 
 measles_data <- read.csv("../data/measlesUKUS.csv")
@@ -35,8 +35,6 @@ fit_tsir <- runtsir(
 
 ld_obs <- select(ld, time, cases)
 ld_covar <- select(ld, pop, rec, index, biweek)
-## density dependence is equivalent to assuming fixed population size 
-ld_covar$pop <- mean(ld_covar$pop) 
 
 ld_covar <- append_basis(ld_covar)
 
@@ -53,7 +51,7 @@ params <- c(trans.param, alpha=unname(fit_tsir$alpha), m=10,
 		   rho=mean(1/fit_tsir$rho),
 		   disp=5)
 
-london_pomp_tsir_det_fixed_density_list <- vector('list', 100)
+london_pomp_exp_det_fixed_frequency_list <- vector('list', 100)
 
 set.seed(101)
 for (i in 1:100) {
@@ -68,8 +66,8 @@ for (i in 1:100) {
 	
 	ll <- logLik(m)
 	
-	london_pomp_tsir_det_fixed_density_list[[i]] <- list(mle=m, ll=ll)
+	london_pomp_exp_det_fixed_frequency_list[[i]] <- list(mle=m, ll=ll)
 }
 
-save("trans.param", "london_pomp_tsir_det_fixed_density_list", "ld_pomp_arg", 
-	 file="london_pomp_tsir_det_fixed_density.rda")
+save("trans.param", "london_pomp_exp_det_fixed_frequency_list", "ld_pomp_arg", 
+	 file="london_pomp_exp_det_fixed_frequency.rda")

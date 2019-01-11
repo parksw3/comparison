@@ -3,7 +3,7 @@ library(dplyr)
 library(tsiR)
 library(pomp)
 
-source("../R/fitfun_pomp_tsir_det.R")
+source("../R/fitfun_pomp_tsir_fixed_det.R")
 source("../R/basis.R")
 
 measles_data <- read.csv("../data/measlesUKUS.csv")
