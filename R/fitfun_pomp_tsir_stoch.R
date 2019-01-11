@@ -77,7 +77,7 @@ initlz <- pomp::Csnippet("
 ")
 
 dmeas <- pomp::Csnippet("
-	lik = dnbinom_mu(cases, disp, I*rho, 0);
+	lik = dnbinom_mu(cases, disp, I*rho, give_log);
 ")
 
 rmeas <- pomp::Csnippet("
