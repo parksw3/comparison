@@ -1,3 +1,4 @@
+library(pomp)
 library(dplyr)
 library(ggplot2); theme_set(theme_bw())
 
@@ -44,17 +45,28 @@ ggplot(combtrans) +
 	geom_line(aes(time, trans, col=dependence), lwd=1) +
 	facet_grid(generation~infection)
 
-combfoi <- combfit %>% 
-	lapply(function(x) {
+
+combfoi <- lapply(1:8, function(n) {
+		x <- combfit[[n]]
+		
 		BXsim <- mgcv::cSplineDes(ld_pomp_arg$covar$biweek, seq(0, 26, by=2))
 		beta <- c(BXsim %*% coef(x)[1:13])
 		
 		sim <- trajectory(x)
 		
-		data.frame(
-			biweek=ld_pomp_arg$covar$biweek,
-			foi=beta*sim["I",,]/x@covar[,"pop"]
-		)
+		if (typedata$infection[n] == "linear") {
+			dd <- data.frame(
+				biweek=ld_pomp_arg$covar$biweek,
+				foi=beta*sim["I",,]/x@covar[,"pop"]
+			)
+		} else {
+			dd <- data.frame(
+				biweek=ld_pomp_arg$covar$biweek,
+				foi=1-exp(-beta*sim["I",,]/x@covar[,"pop"])
+			)
+		}
+	
+		dd
 	}) %>%
 	bind_rows(.id="type") %>%
 	merge(typedata)
@@ -73,12 +85,12 @@ combsim <- combfit %>%
 		if (dim(sim)[1]==3) {
 			dd <- data.frame(
 				time=1:length(sim[2,,]),
-				cases=sim["C",,]
+				cases=sim["C",,]*coef(x)["rho"]
 			)
 		} else {
 			dd <- data.frame(
 				time=1:length(sim[2,,]),
-				cases=sim["I",,]
+				cases=sim["I",,]*coef(x)["rho"]
 			)
 		}
 		
