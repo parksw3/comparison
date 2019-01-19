@@ -3,23 +3,23 @@ rprocess <- pomp::Csnippet("
 	
 	beta = b1*B1+b2*B2+b3*B3+b4*B4+b5*B5+b6*B6+b7*B7+b8*B8+b9*B9+b10*B10+b11*B11+b12*B12+b13*B13;
 
-	births = rec;
+	births = rec * dt;
 
 	if (I == 0) {
 		lambda=0;
 		infection=0;
 	} else {
-		lambda = beta * S * pow(I, alpha)/pop;
+		lambda = beta * S * pow(I, alpha)/pop * dt;
 		infection = lambda;
 	}
 
-	recovery = I * (1-exp(-1));
+	recovery = I * (1-exp(-gamma*dt));
 
 	if (infection > S) infection = S;
 
-	DS = S + births - infection;
-	DI = infection + I - recovery;
-	DC = infection;
+	S += births - infection;
+	I += infection - recovery;
+	C += infection;
 ")
 
 initlz <- pomp::Csnippet("
@@ -51,6 +51,7 @@ toEst <- pomp::Csnippet("
 						Tb12=log(b12);
 						Tb13=log(b13);
 						Talpha=log(alpha);
+						Tgamma=log(gamma);
 						Tm=log(m);
 						TS0=log(S0);
 						TI0=log(I0);
@@ -73,6 +74,7 @@ fromEst <- pomp::Csnippet("
 						  Tb12=exp(b12);
 						  Tb13=exp(b13);
 						  Talpha=exp(alpha);
+						  Tgamma=exp(gamma);
 						  Tm=exp(m);
 						  TS0=exp(S0);
 						  TI0=exp(I0);
@@ -82,7 +84,7 @@ fromEst <- pomp::Csnippet("
 
 pomp_arg <- list(
 	times="time",
-	skeleton=map(rprocess, delta.t=1),
+	rprocess=pomp::euler.sim(rprocess, delta.t=1/2),
 	dmeasure=dmeas,
 	rmeasure=rmeas,
 	initializer = initlz,
@@ -90,6 +92,7 @@ pomp_arg <- list(
 	toEstimationScale=toEst,
 	fromEstimationScale=fromEst,
 	statenames=c("S", "I", "C"),
+	zeronames=c("C"),
 	paramnames=c("b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11",
-		     	 "b12", "b13", "alpha", "m", "S0", "I0", "rho", "disp")
+		     	 "b12", "b13", "alpha", "gamma", "m", "S0", "I0", "rho", "disp")
 )

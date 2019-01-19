@@ -1,10 +1,22 @@
-library(subplex)
 library(dplyr)
 library(tsiR)
 library(pomp)
 
 source("../R/fitfun_pomp_exp_exp_det.R")
 source("../R/basis.R")
+
+nllfun <- function(param, 
+				  pomp_object, 
+				  fixed=c(gamma=1.3862),
+				  trans=TRUE) {
+	if (trans) param <- exp(param)
+	
+	ss <- simulate(pomp_object, params=c(param, fixed), as.data.frame=TRUE)
+	
+	nll <- -sum(dnbinom(pomp_object@data[1,], mu=ss$I*param[["rho"]], size=param[["disp"]], log=TRUE))
+	
+	nll
+}
 
 measles_data <- read.csv("../data/measlesUKUS.csv")
 
@@ -38,6 +50,11 @@ ld_covar <- select(ld, pop, rec, index, biweek)
 ## density dependence is equivalent to assuming fixed population size 
 ld_covar$pop <- mean(ld_covar$pop) 
 
+ld_covar <- lapply(ld_covar, function(x) predict(smooth.spline(x), x=seq(from=0, 547, by=1/2))$y)
+
+ld_covar$index <- seq(from=0, 547, by=1/2)
+ld_covar$biweek <- seq(from=0, 547, by=1/2) %% 26
+
 ld_covar <- append_basis(ld_covar)
 
 ld_pomp_arg <- append(pomp_arg, list(data=ld_obs, covar=ld_covar, t0=min(ld$time)-1))
@@ -48,10 +65,10 @@ trans.param <- estimate_basis(fit_tsir$contact$beta * mean(ld_covar$pop))
 names(trans.param) <- paste0("b", 1:length(trans.param))
 
 params <- c(trans.param, alpha=unname(fit_tsir$alpha), m=10, 
-		   S0=fit_tsir$inits[1],
-		   I0=fit_tsir$inits[2],
-		   rho=mean(1/fit_tsir$rho),
-		   disp=5)
+		    S0=fit_tsir$inits[1],
+		    I0=fit_tsir$inits[2],
+		    rho=mean(1/fit_tsir$rho),
+			disp=5)
 
 london_pomp_exp_det_exp_density_list <- vector('list', 100)
 
@@ -62,11 +79,14 @@ for (i in 1:100) {
 	start <- rlnorm(length(params), meanlog=log(params), sdlog=0.01)
 	names(start) <- names(params)
 	
-	m <- traj.match(ld_pomp, start=start, est=names(params),
-					transform=TRUE,
-					maxit=1e5)
+	m <- optim(log(start), nllfun, pomp_object=ld_pomp,
+				control=list(maxit=1e5))
 	
-	ll <- logLik(m)
+	ll <- -m$value
+	
+	m <- list(
+		oo=m, model=ld_pomp
+	)
 	
 	london_pomp_exp_det_exp_density_list[[i]] <- list(mle=m, ll=ll)
 }
