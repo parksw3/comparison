@@ -52,7 +52,18 @@ For measles outbreak in London, we find that both representations give very simi
 
 \subsection{Infectious period and generation interval}
 
-
+Probability that an infected individual recovers in $\Delta t$ time unit is given by
+\begin{equation}
+1 - \exp (- \lambda \Delta t).
+\end{equation}
+Then, the dynamics of infected individuals can be written as
+\begin{equation}
+\begin{aligned}
+S_{t+\Delta t} &= B_t + S_t - \beta S_t \frac{I_t^\alpha}{N_t} \Delta t\\
+I_{t+\Delta t} &= \beta S_t \frac{I_t^\alpha}{N_t} \Delta t + I_t - I_t \left(1 - \exp (- \lambda \Delta t) \right) \\
+\end{aligned}
+\end{equation}
+In this model, the mean infectious period as well as the mean generation interval is equal to $1/(1 - \exp (- \lambda \Delta t))$.
 
 
 \end{document}

@@ -18,4 +18,9 @@ ld <- measles_list$LONDON
 
 beta <- beta_t[ld$biweek]
 
-cor(beta * (ld$cases/0.52)^alpha/ld$pop, 1-exp(-beta * (ld$cases/0.52)^alpha/ld$pop))
+dd <- data.frame(
+	linear=beta * (ld$cases/0.52)^alpha/ld$pop,
+	exponential=1-exp(-beta * (ld$cases/0.52)^alpha/ld$pop)
+)
+
+
