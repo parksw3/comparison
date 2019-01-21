@@ -93,10 +93,10 @@ ggplot(det_simdata %>% filter(key=="I")) +
 	geom_line(aes(time, mean, group=delta), lwd=1) +
 	ylab("Proportion infected") +
 	xlab("Time (generations)") +
-	facet_grid(~delta, labeller=label_parsed) +
-	theme(
-		
-	)
+	facet_grid(~delta, labeller=label_parsed) 
+
+
+
 
 stoch_simlist1 <- lapply(delta_vec, simulate_si, nsim=500, type="stoch", N=1000)
 stoch_simlist2 <- lapply(delta_vec, simulate_si, nsim=500, type="stoch", N=10000)

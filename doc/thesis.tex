@@ -1,0 +1,133 @@
+\documentclass{article}
+
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+
+\usepackage{natbib}
+\usepackage{hyperref}
+\bibliographystyle{chicago}
+
+\usepackage{graphicx}
+
+\title{Thesis}
+\date{\today}
+\author{Sang Woo Park}
+
+\begin{document}
+\maketitle
+
+
+\section{Introduction}
+
+Please write something here.
+
+\section{Deterministic SIR model}
+
+First, we begin our exploration using the simplest epidemic model.
+The susceptible-infected-recovered (SIR) model describes...:
+\begin{equation}
+\begin{aligned}
+\frac{dS}{dt} &= - \beta S \frac{I}{N}\\
+\frac{dI}{dt} &= \beta S \frac{I}{N} - \gamma I\\
+\frac{dR}{dt} &= \gamma I
+\end{aligned}
+\label{eq:sir}
+\end{equation}
+
+We want to consider discretized version of this model.
+
+\subsection{Probability of infection}
+
+
+\subsection{Infectious period}
+
+Geometric distribution with probability of $1-\exp(-\gamma \Delta t)$ and unit of $\Delta t$.
+Then, mean infectious period and generation interval is given by 
+\begin{equation}
+\frac{\Delta t}{1-\exp(-\gamma \Delta t)}.
+\end{equation}
+An important but often overlooked component is the variance of the distribution.
+Squared coefficient of variation for this distribution is equal to $\exp(-\gamma \Delta t)$, which necessarily depends on pre-specified time-step $\Delta t$.
+If we want to match the mean of the distribution to a fixed value $\mu$ regardless of our choices of $\Delta t$, we obtain 
+\begin{equation}
+\hat \gamma = - \frac{1}{\Delta t} \log\left(1 - \frac{\Delta t}{\mu}\right)
+\end{equation}
+Then,
+\begin{equation}
+\mathrm{CV}_{\tiny\textrm{Infectious period}}(\Delta t)^2 = 1 - \frac{\Delta t}{\mu}.
+\end{equation}
+
+We expect changes in variation in infectious period to affect variation in stochstic realizations.
+
+This means that the relationship between $r$ and $\mathcal R$ changes.
+For this generation-interval distribution, we have
+\begin{equation}
+\mathcal R = 1 + \frac{\exp(r) -1}{(1-\exp(-\gamma \Delta t)) }
+\end{equation}
+Substituting 
+\begin{equation}
+r = \frac{1}{\Delta t} \log \left(1 + \beta - \frac{\Delta t}{\mu}\right),
+\end{equation}
+as well as $\hat \gamma$, we get
+\begin{equation}
+\mathcal R = 1 + \frac{\mu}{\Delta t} \left(1 + \beta - \frac{\Delta t}{\mu}\right)^{1/\Delta t}
+\end{equation}
+
+We find that the formula for reproduction number suggested by \cite{he2009plug} only holds when generation interval is held constant.
+
+
+First, we compare how the dynamics of a system depend on the value of $\Delta t$?
+
+\subsection{Incidence, prevalence, and mortality}
+
+
+
+
+
+
+\section{Bibliography}
+
+\bibliography{thesis}
+
+\section{Appendix}
+
+\subsection{Derivation of growth rate in discrete-time SIR model}
+
+
+Derivation:
+\begin{equation}
+\begin{aligned}
+S_{t+\Delta t} &= S_t - S_t (1- \exp(-\beta I_t \Delta t/N))\\
+I_{t+\Delta t} &= S_t (1- \exp(-\beta I_t \Delta t/N)) + I_t - I_t (1- \exp(-\gamma \Delta t))
+\end{aligned}
+\end{equation}
+Assuming tat $S_t$ is approximately equal to $N$, we get
+\begin{equation}
+I_{t+\Delta t} = N_t (1- \exp(-\beta I_t \Delta t/N)) + I_t \exp(-\gamma \Delta t)
+\end{equation}
+When $I_t \approx 0$, $\exp(-\beta I_t \Delta t/N) \approx 1 - \beta I_t \Delta t/N$ and so
+\begin{equation}
+\begin{aligned}
+I_{t+\Delta t} &\approx  I_t \beta \Delta t + I_t \exp(-\gamma \Delta t)\\
+&= I_t (\beta \Delta t + \exp(-\gamma \Delta t))
+\end{aligned}
+\end{equation}
+Substituting $\hat{\gamma}$, we get
+\begin{equation}
+I_{t+\Delta t} = I_t \left(1 + \beta - \frac{\Delta t}{\mu}\right),
+\end{equation}
+Therefore,
+\begin{equation}
+I_{t} = I_0 \left(1 + \beta - \frac{\Delta t}{\mu}\right)^{t/\Delta t}
+\end{equation}
+and the initial growth rate is given by
+\begin{equation}
+r = \frac{1}{\Delta t} \log \left(1 + \beta - \frac{\Delta t}{\mu}\right).
+\end{equation}
+
+
+
+
+\end{document}
