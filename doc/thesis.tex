@@ -29,16 +29,44 @@ First, we begin our exploration using the simplest epidemic model.
 The susceptible-infected-recovered (SIR) model describes...:
 \begin{equation}
 \begin{aligned}
-\frac{dS}{dt} &= - \beta S \frac{I}{N}\\
-\frac{dI}{dt} &= \beta S \frac{I}{N} - \gamma I\\
-\frac{dR}{dt} &= \gamma I
+\frac{dS}{dt} &= b(s) - \beta (t) S \frac{I}{N}\\
+\frac{dI}{dt} &= \beta (t) S \frac{I}{N} - \gamma I\\
 \end{aligned}
 \label{eq:sir}
 \end{equation}
 
 We want to consider discretized version of this model.
 
+TSIR and hazard-based model.
+TSIR:
+\begin{equation}
+\begin{aligned}
+S_{t + \Delta t} &= B_t + S_t - \beta_t S_t \frac{I_t}{N_t} \Delta t\\
+I_{t + \Delta t} &= \beta_t S_t \frac{I_t}{N_t} \Delta t
+\end{aligned}
+\end{equation}
+Assumptions are:
+\begin{itemize}
+	\item Fixed generation time
+	\item Linear probability of infection
+\end{itemize}
+Hazard-based model:
+\begin{equation}
+\begin{aligned}
+S_{t + \Delta t} &= B_t + S_t - S_t \left(1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\right)\right)\\
+I_{t + \Delta t} &= S_t \left( 1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\right)\right) + I_t - I_t (1 - \exp(-\gamma \Delta t))
+\end{aligned}
+\end{equation}
+Tries to account for variation in ... but still ... When are these assumptions appropriate?
+
 \subsection{Probability of infection}
+
+In both the TSIR model and the hazard-based model, transition from the susceptible comparment, $S$, to the infected compartment, $I$, is represented as a product of number of susceptible individuals and probability of infection between two time steps $t$ and $t + \Delta t$.
+The TSIR model assumes that the probability of infection is a linear function of prevalence $I_t$.
+This formulation is based on the Euler approximation to the solution of the ordinary differential equation.
+On the other hand, the hazard-based model assumes that the probability of infection is an inverse exponential function of prevalence $I_t$.
+Besides their differences in the relationship between prevalence and probability of infection, there are two more assumptions that we need to consider: (1) force of infection remains constant over two time steps and (2) new susceptible individuals have zero probability of infection between the two time steps.
+
 
 
 \subsection{Infectious period}
@@ -68,17 +96,27 @@ For this generation-interval distribution, we have
 \end{equation}
 Substituting 
 \begin{equation}
-r = \frac{1}{\Delta t} \log \left(1 + \beta - \frac{\Delta t}{\mu}\right),
+r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right),
 \end{equation}
 as well as $\hat \gamma$, we get
 \begin{equation}
-\mathcal R = 1 + \frac{\mu}{\Delta t} \left(1 + \beta - \frac{\Delta t}{\mu}\right)^{1/\Delta t}
+\mathcal R = 1 + \frac{\mu}{\Delta t} \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right)^{1/\Delta t}
+\end{equation}
+Then, we can obtain a relationship between $\mathcal R$ of a discrete-time system and that of a corresponding continuous time system, assuming that contact rate $\beta$ and mean generation-time $\mu$ are the same:
+\begin{equation}
+\mathcal R_{\tiny \textrm{discrete}} = 1 + \frac{\mu}{\Delta t} \left(1 + \frac{(\mathcal R_{\tiny \textrm{continuous}}  - 1) \Delta t }{\mu}\right)^{1/\Delta t}
 \end{equation}
 
-We find that the formula for reproduction number suggested by \cite{he2009plug} only holds when generation interval is held constant.
+On the other hand, we may want to match choose $\beta$ and $\mu$ to match true $r$ and $\mathcal R$.
 
+
+
+% We find that the formula for reproduction number suggested by \cite{he2009plug} only holds when generation interval is held constant.
 
 First, we compare how the dynamics of a system depend on the value of $\Delta t$?
+
+
+
 
 \subsection{Incidence, prevalence, and mortality}
 
@@ -96,7 +134,7 @@ First, we compare how the dynamics of a system depend on the value of $\Delta t$
 \subsection{Derivation of growth rate in discrete-time SIR model}
 
 
-Derivation:
+/Derivation:
 \begin{equation}
 \begin{aligned}
 S_{t+\Delta t} &= S_t - S_t (1- \exp(-\beta I_t \Delta t/N))\\
@@ -116,16 +154,18 @@ I_{t+\Delta t} &\approx  I_t \beta \Delta t + I_t \exp(-\gamma \Delta t)\\
 \end{equation}
 Substituting $\hat{\gamma}$, we get
 \begin{equation}
-I_{t+\Delta t} = I_t \left(1 + \beta - \frac{\Delta t}{\mu}\right),
+I_{t+\Delta t} = I_t \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right),
 \end{equation}
 Therefore,
 \begin{equation}
-I_{t} = I_0 \left(1 + \beta - \frac{\Delta t}{\mu}\right)^{t/\Delta t}
+I_{t} = I_0 \left(1 + \beta\Delta t - \frac{\Delta t}{\mu}\right)^{t/\Delta t}
 \end{equation}
 and the initial growth rate is given by
 \begin{equation}
-r = \frac{1}{\Delta t} \log \left(1 + \beta - \frac{\Delta t}{\mu}\right).
+r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right).
 \end{equation}
+
+
 
 
 

@@ -1,39 +1,25 @@
 ## adapted from https://rpubs.com/bbolker/SIRgillespie
-ratefun <- function(x,param,t,
-					betafun,
-					rhofun) {
-	beta <- betafun(t, param)
-	
-	birth <- rhofun(x, t, param)
-	
+ratefun <- function(x,param) {
 	with(as.list(c(x,param)),{
 		c(
-			birth=birth,
-			inf=beta*S*(I+nu)/N,  ## scale infection by pop size
-			prog=sigma*E,
+			inf=beta*S*I/N,  ## scale infection by pop size
 			recover=gamma*I)
 	})
 }
 
 transfun <- function(x,w) {
 	switch(w,
-		   x + c(1,0,0,0),
-		   x + c(-1,1,0,0),
-		   x + c(0,-1,1,0), 
-		   x + c(0,0,-1,1)
+		   x + c(-1,1),
+		   x + c(0,-1)
 	)   
 }
 
-gillespie.run <- function(trans.param,
-				epi.param=c(sigma=365/8, gamma=365/5, nu=1e-6,N=1e7),
-				S0=0.035 * 1e7,
-				E0=0,
-				I0=100,
-				R0=0,
-				itmax=1e3,
-				ret=c("final","all"),
-				betafun, rhofun,
-				seed) {
+gillespie.run <- function(param=c(beta=2, gamma=1, N=1e5),
+						  S0=1e5-10,
+						  I0=10,
+						  itmax=1e5,
+						  ret=c("final","all"),
+						  seed) {
 	ret <- match.arg(ret)
 	if (ret=="all") {
 		rmat <- matrix(NA,nrow=itmax,ncol=2,
@@ -42,13 +28,12 @@ gillespie.run <- function(trans.param,
 	
 	if (!missing(seed)) set.seed(seed)
 	
-	x <- c(S=S0,E=E0,I=I0,R=R0)
+	x <- c(S=S0,I=I0)
 	it <- 1
 	t <- 0
-	trans <- c(0,0,0,0)
-	param <- c(trans.param, epi.param)
+	trans <- c(0,0)
 	while (x["I"]>0 & it<=itmax) {
-		r <- ratefun(x,param,t,betafun,rhofun)
+		r <- ratefun(x,param)
 		t <- t+rexp(1,rate=sum(r))
 		w <- sample(length(r),size=1,prob=r)
 		x <- transfun(x,w)
