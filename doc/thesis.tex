@@ -21,23 +21,51 @@
 
 \section{Introduction}
 
-Please write something here.
+Fitting discrete-time models.
 
-\section{Deterministic SIR model}
+\section{SIR model}
 
-First, we begin our exploration using the simplest epidemic model.
-The susceptible-infected-recovered (SIR) model describes...:
+The susceptible-infected-recovered (SIR) model is one of the simplest epidemic models which describe how disease spreads in a homogeneously mixing population.
+In general, the SIR model can be written as 
 \begin{equation}
 \begin{aligned}
-\frac{dS}{dt} &= b(s) - \beta (t) S \frac{I}{N}\\
-\frac{dI}{dt} &= \beta (t) S \frac{I}{N} - \gamma I\\
+\frac{dS}{dt} &= b(t) - \phi(t) S\\
+\frac{dI}{dt} &= \phi(t) S - \gamma I\\
+\frac{dR}{dt} &= \gamma I
 \end{aligned}
 \label{eq:sir}
 \end{equation}
+where $S$, $I$, and $R$ describe the number of susceptible, infected, and recovered individuals.
+$b(t)$ represents recruitment rate to the susceptible population, and $\gamma$ represents per-capita recovery rate.
+$\phi(t)$ represents force of infection, which is defined as the rate at which a susceptible individual acquires infection.
+Typically, we write $\phi(t) = \beta(t) I/N$ to represent \textit{frequency}-dependent action or $\phi(t) = \beta I$ to represent \textit{density}-dependent action, where $N = S + I + R$ is the total population size.
+%% heterogeneity and what not
 
-We want to consider discretized version of this model.
+\begin{itemize}
+	\item Underlying system is stochastic
+	\item Data is discrete
+\end{itemize}
 
-TSIR and hazard-based model.
+
+\subsection{Incidence, prevalence, and mortality}
+
+Data often comes in discrete counts and we want to distinguish among different kinds of data. In particular, we want to distinguish between incidence, prevalence, and mortality.
+Incidence is defined as the number of newly infected cases.
+\begin{equation}
+i(t, t+\Delta t) = \int_{t}^{t+\Delta t} \phi(s) S ds
+\end{equation}
+Prevalence is defined as the number of infected individuals present in the population.
+Finally, mortality is defined as the number of individuals that died over a time period
+\begin{equation}
+m(t, t+\Delta t) = \int_{t}^{t+\Delta t} \gamma I ds
+\end{equation}
+
+
+
+\section{Discrete-time SIR model}
+
+\subsection{Time-series SIR model}
+
 TSIR:
 \begin{equation}
 \begin{aligned}
@@ -50,6 +78,9 @@ Assumptions are:
 	\item Fixed generation time
 	\item Linear probability of infection
 \end{itemize}
+
+\subsection{Hazard-based model}
+
 Hazard-based model:
 \begin{equation}
 \begin{aligned}
@@ -58,6 +89,12 @@ I_{t + \Delta t} &= S_t \left( 1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\ri
 \end{aligned}
 \end{equation}
 Tries to account for variation in ... but still ... When are these assumptions appropriate?
+
+\subsection{Generation-based model}
+
+
+
+
 
 \subsection{Probability of infection}
 
@@ -117,10 +154,36 @@ First, we compare how the dynamics of a system depend on the value of $\Delta t$
 
 
 
+\section{Model fitting}
 
-\subsection{Incidence, prevalence, and mortality}
+\begin{itemize}
+	\item Trajectory matching
+	\item Gradient matching
+	\item Generalized profiling
+	\item TSIR
+	\item Particle filter
+	\item Synthetic likelihood
+\end{itemize}
+
+\subsection{Trajectory matching}
+
+\subsection{Gradient matching}
+
+When incidence is reported, we have
+\begin{equation}
+E[y_t] = \rho \int_{t}^{t+\Delta t} \phi(s) S ds \approx \rho \phi(s) S \Delta t
+\end{equation}
+So in some sense, we already have information about the infection rate. 
+We have indirect observation of the states.
+
+We can use a semi-parametric approach.
 
 
+\subsection{Generalized profiling}
+
+\begin{equation}
+\sum \mathrm{distrib}(y_t, \mu_t, ...) + \lambda \sum 
+\end{equation}
 
 
 
@@ -134,7 +197,7 @@ First, we compare how the dynamics of a system depend on the value of $\Delta t$
 \subsection{Derivation of growth rate in discrete-time SIR model}
 
 
-/Derivation:
+Derivation:
 \begin{equation}
 \begin{aligned}
 S_{t+\Delta t} &= S_t - S_t (1- \exp(-\beta I_t \Delta t/N))\\

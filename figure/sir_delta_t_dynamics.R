@@ -1,33 +1,47 @@
-library(deSolve)
 library(tidyr)
 library(dplyr)
-library(ggplot2); theme_set(theme_bw())
+library(ggplot2); theme_set(theme_bw(base_size = 12,
+									 base_family = "Times"))
 
-sir <- function(t, state, parameters) {
-	with(as.list(c(state, parameters)), {
-		I <- exp(logI)
-		dS <- - beta * S * I/N
-		dlogI <- beta * S/N - gamma
-		dR <- gamma * I
-		list(c(dS, dlogI, dR))
-	})
+if (.Platform$OS.type=="windows") {
+	windowsFonts(Times=windowsFont("Times"))
+} 
+
+## use Dark2 rather than Set1 because colour #6 of Set1 is yellow (ugh/too light)
+scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,palette=palette)
+scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
+
+load("../sim/gillespie_sim.rda")
+
+nsim <- length(reslist)
+
+datalist <- vector('list', nsim)
+
+set.seed(101)
+for (i in 1:nsim) {
+	rr <- reslist[[i]]
+	ii <- c(rr$incidence[1], diff(rr$incidence))
+	tt <- rr$time
+	
+	dd <- as.data.frame(table(ceiling(tt[ii==1])))
+	colnames(dd) <- c("time", "incidence")
+	dd$time <- as.numeric(as.character(dd$time))
+	
+	datalist[[i]] <- dd
 }
-
-par <- c(beta=2, gamma=1, N=1)
-yini <- c(S=1-1e-4, logI=log(1e-4), R=0)
-
-out <- as.data.frame(rk(yini, seq(0, 30, by=0.1), sir, par))
 
 simulate_si <- function(delta=0.1, 
 						beta=2, 
 						IP=1, ## infectious period
 						I0=10,
 						N=1e5,
-						tmax=30,
+						tmax=20,
 						type=c("det", "stoch"),
 						nsim=1) {
 	
 	type <- match.arg(type)
+	
+	ind <- seq(1, tmax/delta+1, by=1/delta)
 	
 	if (type=="det") {
 		simfun <- function(x, y) x * y
@@ -63,9 +77,8 @@ simulate_si <- function(delta=0.1,
 		}
 		
 		reslist[[i]] <- data.frame(
-			time=tvec,
-			S=Svec,
-			I=Ivec,
+			time=tail(tvec[ind], -1),
+			incidence=-diff(Svec[ind]),
 			sim=i,
 			type=type,
 			delta=delta
@@ -77,30 +90,7 @@ simulate_si <- function(delta=0.1,
 
 delta_vec <- c(0.1, 0.2, 0.5, 1)
 
-det_simlist <- lapply(delta_vec, simulate_si)
-
-det_simdata <- det_simlist %>%
-	bind_rows %>%
-	gather(key, value, -time, -sim, -type, -delta) %>%
-	group_by(key, type, time, delta) %>%
-	summarize(mean=mean(value)/1e5) %>%
-	mutate(
-		delta=factor(delta, labels=paste0("Delta~t==", delta))
-	)
-
-ggplot(det_simdata %>% filter(key=="I")) +
-	geom_line(data=out, aes(time, exp(logI)), col="gray", lwd=2) +
-	geom_line(aes(time, mean, group=delta), lwd=1) +
-	ylab("Proportion infected") +
-	xlab("Time (generations)") +
-	facet_grid(~delta, labeller=label_parsed) 
-
-
-
-
-stoch_simlist1 <- lapply(delta_vec, simulate_si, nsim=500, type="stoch", N=1000)
-stoch_simlist2 <- lapply(delta_vec, simulate_si, nsim=500, type="stoch", N=10000)
-stoch_simlist3 <- lapply(delta_vec, simulate_si, nsim=500, type="stoch", N=100000)
+stoch_simlist <- lapply(delta_vec, simulate_si, nsim=250, type="stoch", N=1e5)
 
 stoch_simdata <- stoch_simlist %>% 
 	bind_rows %>%
@@ -110,21 +100,37 @@ stoch_simdata <- stoch_simlist %>%
 		mean=mean(value),
 		lwr=quantile(value, 0.025),
 		upr=quantile(value, 0.975)
+ 	) %>% 
+	mutate(
+		sim="discrete",
+		delta=paste0("Delta~t==", delta, "~generation")
 	)
 
-ggplot(stoch_simdata %>% filter(key=="I")) +
-	geom_line(aes(time, mean)) +
-	geom_ribbon(aes(time, ymin=lwr, ymax=upr), alpha=0.5) +
-	facet_wrap(~delta)
-
-stoch_summary <- stoch_simlist %>%
-	bind_rows %>%
-	group_by(type, sim, delta) %>%
+gillespie_simdata <- datalist %>%
+	bind_rows(.id="sim") %>%
+	filter(time <= 20) %>%
+	gather(key, value, -time, -sim) %>%
+	group_by(key, time) %>%
 	summarize(
-		max=max(I),
-		maxtime=head(time[I==max(I)],1),
-		zerotime=head(time[I==0], 1),
-		final=1-tail(S, 1)/(head(S,1)+10)
+		mean=mean(value),
+		lwr=quantile(value, 0.025),
+		upr=quantile(value, 0.975)
+	) %>%
+	mutate(sim="gillespie")
+
+gsim <-ggplot(stoch_simdata) +
+	geom_line(data=gillespie_simdata, aes(time, mean, col=sim), lwd=1) +
+	geom_ribbon(data=gillespie_simdata, aes(time, ymin=lwr, ymax=upr, fill=sim), alpha=0.3) +
+	geom_line(aes(time, mean, col=sim), lwd=1) +
+	geom_ribbon(aes(time, ymin=lwr, ymax=upr, fill=sim), alpha=0.3) +
+	facet_wrap(~delta, labeller = label_parsed, nrow=1) +
+	ylab("Incidence") +
+	xlab("Generations") +
+	theme(
+		panel.spacing.x = grid::unit(0, "cm"),
+		strip.background = element_blank(),
+		legend.position = "top",
+		legend.title = element_blank()
 	)
 
-ggplot(stoch_summary) + geom_boxplot(aes(as.character(delta), maxtime))
+ggsave("sir_delta_t_dynamics.pdf", width=6, height=4)
