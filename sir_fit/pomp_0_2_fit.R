@@ -8,12 +8,13 @@ load("../data/gillespie_data.rda")
 argvals <- commandArgs(trailingOnly=TRUE)
 batch_num <- as.numeric(argvals[1])
 
-fn <- paste0("pomp_0_1_fit_", batch_num, ".rda")
+fn <- paste0("pomp_0_2_fit_", batch_num, ".rda")
 
-delta_t <- 0.1
+delta_t <- 0.2
 gamma <- -1/delta_t * log(1 - delta_t/1)
 
 globals <- Csnippet(paste0("double N=100000; double Gamma=",gamma,";"))
+pomp_arg$rprocess <- pomp::euler.sim(rprocess, delta.t=2/10)
 
 nsim <- 10
 
