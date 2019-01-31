@@ -8,7 +8,7 @@ load("../data/gillespie_data.rda")
 delta_t <- 0.1
 gamma <- -1/delta_t * log(1 - delta_t/1)
 
-globals <- Csnippet(paste0("double N=100000; double gamma=",gamma,";"))
+globals <- Csnippet(paste0("double N=100000; double Gamma=",gamma,";"))
 
 nsim <- length(datalist)
 

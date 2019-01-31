@@ -3,7 +3,7 @@ rprocess <- pomp::Csnippet("
 	
 	infection = rbinom(S, 1 - exp(-beta*I/N*dt));	
 
-	recovery = rbinom(I, (1-exp(-gamma*dt)));
+	recovery = rbinom(I, (1-exp(-Gamma*dt)));
 
 	S += - infection;
 	I += infection - recovery;
