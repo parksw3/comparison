@@ -38,16 +38,12 @@ for (i in 1:nsim) {
 	
 	m <- mif2(
 		pomp_model,
-		Nmif=50,
+		Nmif=300,
 		start=start,
 		Np=1000,
 		cooling.fraction.50=0.95,
 		rw.sd=do.call(rw.sd, rwsd_arg),
-		transform=TRUE) %>%
-		continue(Nmif=50, cooling.fraction=0.8) %>%
-		continue(Nmif=50, cooling.fraction=0.6) %>%
-		continue(Nmif=50, cooling.fraction=0.2) %>%
-		continue(Nmif=50, cooling.fraction=0.1)
+		transform=TRUE)
 	
 	cc <- confint_pomp(m, rwsd_arg=rwsd_arg)
 	

@@ -24,7 +24,7 @@ confint_pomp <- function(pomp_object,
 		uplist <- list()
 		i <- 1
 		
-		while (ldiff < maxdiff) {
+		while (abs(ldiff) < maxdiff) {
 			## up
 			cc2 <- cc
 			cc2[p] <- cc[p] + delta * i
@@ -63,7 +63,7 @@ confint_pomp <- function(pomp_object,
 		downlist <- list()
 		i <- 1
 		
-		while (ldiff > -maxdiff) {
+		while (abs(ldiff) < maxdiff) {
 			## down
 			cc2 <- cc
 			cc2[p] <- cc[p] - delta * i

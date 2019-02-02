@@ -57,6 +57,14 @@ for (i in 1:nsim) {
 	
 	gfit <- gam(incidence~s(time, bs="cr"), data=dd, family=nb)
 	
+	newdata <- data.frame(time=seq(1, 21, by=1))
+	
+	I <- exp(predict(gfit, newdata=newdata))/0.7
+	
+	S <- N - cumsum(I)
+	
+	dI <- diff(I)
+	
 	start <- c(log.beta=log(2), logit.rprob=qlogis(0.7), logit.I0=qlogis(10/1e5), log.size=log(1))
 	
 	m <- mle2(objfun, start, data=list(data=dd, gfit=gfit), vecpar=TRUE)
