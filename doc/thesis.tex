@@ -21,7 +21,7 @@
 
 \section{Introduction}
 
-Fitting discrete-time models.
+Fitting models. Too many methods and too many models. What should we do?
 
 \section{SIR model}
 
@@ -38,27 +38,129 @@ In general, the SIR model can be written as
 where $S$, $I$, and $R$ describe the number of susceptible, infected, and recovered individuals.
 $b(t)$ represents recruitment rate to the susceptible population, and $\gamma$ represents per-capita recovery rate.
 $\phi(t)$ represents force of infection, which is defined as the rate at which a susceptible individual acquires infection.
-Typically, we write $\phi(t) = \beta(t) I/N$ to represent \textit{frequency}-dependent action or $\phi(t) = \beta I$ to represent \textit{density}-dependent action, where $N = S + I + R$ is the total population size.
+We write $\phi(t) = \beta(t) I/N$ to represent \textit{frequency}-dependent action or $\phi(t) = \beta I$ to represent \textit{density}-dependent action, where $N = S + I + R$ is the total population size.
 %% heterogeneity and what not
+For this study, we focus on $\phi(t) = \beta(t)I/N$.
 
-\begin{itemize}
-	\item Underlying system is stochastic
-	\item Data is discrete
-\end{itemize}
-
+Typically, data suffers from under-reporting and we may want to understand the dynamics of $\rho I$ instead, where $\rho$ is the reporting rate.
+Then, we can write
+\begin{equation}
+\begin{aligned}
+\frac{dS}{dt} &= b(t) - \beta S \frac{\hat{I}}{\rho N} \\
+\frac{d\hat{I}}{dt} &= \beta S \frac{\hat{I}}{N} - \gamma \hat{I} \\
+\end{aligned}
+\label{eq:rhosir}
+\end{equation}
 
 \subsection{Incidence, prevalence, and mortality}
 
-Data often comes in discrete counts and we want to distinguish among different kinds of data. In particular, we want to distinguish between incidence, prevalence, and mortality.
-Incidence is defined as the number of newly infected cases.
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{../figure/inc_prev_mort.pdf}
+\end{figure}
+
+We want to distinguish among different kinds of data: prevalence, incidence, and mortality.
+Prevalence is defined as the total number of infected individuals present in the population and corresponds to $\hat{I}(t)$.
+Incidence is defined as the number of newly infected cases. 
+Hence, incidence report at time $t$ corresponds to the integral of the total infection rate from the previous reporting period $t - \Delta t$ and current reporting period $t$:
 \begin{equation}
-i(t, t+\Delta t) = \int_{t}^{t+\Delta t} \phi(s) S ds
+\int_{t-\Delta t}^{t} \beta(s) S \frac{\hat{I}}{N} ds.
 \end{equation}
-Prevalence is defined as the number of infected individuals present in the population.
-Finally, mortality is defined as the number of individuals that died over a time period
+Finally, mortality is defined as the number of individuals that died over a time period.
+Like incidence, mortality can be written as the integral of the total death rate:
 \begin{equation}
-m(t, t+\Delta t) = \int_{t}^{t+\Delta t} \gamma I ds
+\int_{t-\Delta t}^{t} \gamma \hat{I} ds.
 \end{equation}
+
+The main difference among the three types is that prevalence counts provide a direct observation of a state variable whereas incidence and mortality counts do not.
+As a result, 
+
+In this article, we focus on fitting to incidence data only.
+In particular, we consider two kinds of models: continuous deterministic models and discrete stochastic models.
+We do not consider fitting continuous stochastic models because they are computationally too expensive.
+
+\section{Fitting continuous deterministic models}
+
+\subsection{Trajectory matching}
+
+Trajectory matching is one of the simplest fitting methods.
+As its name suggests, the goal is to find a set of parameters such that the simulated trajectory, from the ODE model, best matches the observed data.
+This method assumes that there is only measurement error and no process error.
+The measurement model can be written as:
+\begin{equation}
+y_t \sim \mathrm{NegBinomial}\left(\mu_t= \int_{t-\Delta t}^{t} \beta(s) S \frac{\hat{I}}{N} ds, \phi \right),
+\end{equation}
+where $\rho$ is reporting rate and $\phi$ is dispersion parameter.
+We prefer this model compared to the binomial or beta-binomial model because fitting binomial or beta-binomial models may not work if there are any irregular patterns in the data.
+
+\subsection{Gradient matching}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{../figure/gradient_matching_sinusoidal.pdf}
+\end{figure}
+
+When all state variables are observed, we can fit smooth curves to the data and obtain an estimate of the gradients of the ODE.
+For the SIR model, we can write
+\begin{equation}
+\frac{d\log \hat{I}}{dt} = \beta(t) \frac{S}{N} - \gamma.
+\end{equation}
+If we assume that $\gamma$, and $N$ are known, we can estimate $\beta(t)$ via nonparametric or parametric regression.
+
+Estimating time varying transmission rate can be challenging as the expression above.
+We can go about solving this problem in two ways.
+First, we can write
+\begin{equation}
+\gamma + \frac{d\log \hat{I}}{dt} \sim \mathrm{Normal}\left(\mu_t=\exp\left( \log \beta(t) + \log S - \log N\right), \sigma\right)
+\end{equation}
+In this case, $S$ and $N$ can be treated as offset terms.
+Second, we can use interactions?
+
+
+It is often difficult of observe all state variables for epidemic data.
+Moreover, incidence reports only provide indirect observation of statevariables.
+What happens if we assume that incidence is similar to prevalence and use susceptible reconstruction methods to obtain an estimate of the susceptible population.
+
+First, we test whether this works by simulating a deterministic model with measurement error.
+We use natural cubic spline with knots placed every 6 biweeks.
+It works generally well but there is systematic bias.
+When gradients are at their local maxima (and minima), we tend to overestimate (and underestimate) the gradients.
+This is because incidence precedes prevalence?
+
+
+
+Conditions:
+\begin{itemize}
+	\item See Jost and Ellner 
+	\item sampled sufficiently
+	\item not too much error
+\end{itemize}
+
+
+When incidence is reported, we have
+\begin{equation}
+E[y_t] = \rho \int_{t-\Delta t}^{t} \phi(s) S ds \approx \rho \phi(s) S \Delta t
+\end{equation}
+So we do not have direct observation of the state variables.
+However, 
+
+So in some sense, we already have information about the infection rate. 
+We have indirect observation of the states.
+
+If we pretend that we are observing $\rho I$, then $\rho I$
+
+%% read pomp-Astic somewhere
+
+
+We can use a semi-parametric approach.
+
+
+\subsection{Generalized profiling}
+
+\begin{equation}
+\sum \mathrm{distrib}(y_t, \mu_t, ...) + \lambda \sum 
+\end{equation}
+
+
+
 
 
 
@@ -164,28 +266,6 @@ First, we compare how the dynamics of a system depend on the value of $\Delta t$
 	\item Particle filter
 	\item Synthetic likelihood
 \end{itemize}
-
-\subsection{Trajectory matching}
-
-\subsection{Gradient matching}
-
-When incidence is reported, we have
-\begin{equation}
-E[y_t] = \rho \int_{t}^{t+\Delta t} \phi(s) S ds \approx \rho \phi(s) S \Delta t
-\end{equation}
-So in some sense, we already have information about the infection rate. 
-We have indirect observation of the states.
-
-We can use a semi-parametric approach.
-
-
-\subsection{Generalized profiling}
-
-\begin{equation}
-\sum \mathrm{distrib}(y_t, \mu_t, ...) + \lambda \sum 
-\end{equation}
-
-
 
 
 \section{Bibliography}
