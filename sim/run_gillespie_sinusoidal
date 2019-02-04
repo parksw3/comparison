@@ -1,0 +1,5 @@
+for BATCHNUM in {0..9}; do
+echo $BATCHNUM
+fn=gillespie_sinusoidal_sim${BATCHNUM}
+sqsub -q serial -o $fn.%J.out --mpp 8G -r 24h R CMD BATCH --vanilla "--args $BATCHNUM" gillespie_sinusoidal_sim.R $fn.Rout
+done;

@@ -49,23 +49,22 @@ for (i in 1:nsim) {
 		logIprev=head(log(I), -1),
 		S=head(S0vec[j]*N + Z, -1),
 		N=N,
-		biweek=head(dd$biweek, -1)
+		biweek=as.factor(head(dd$biweek, -1))
 	)
 	
 	fitdata$offterm <- log(fitdata$S) - log(fitdata$N)
 	
-	lfit <- lm(logInew ~ -1 + as.factor(biweek) + logIprev + offset(offterm), data=fitdata)
+	lfit <- lm(logInew ~ biweek + logIprev + offset(offterm), data=fitdata,
+			   contrasts = list(biweek=contr.sum))
 	
 	## approximate
-	R0_sd <- c(sqrt(sum(vcov(lfit)[1:26, 1:26])/26^2))
-	logR0 <- mean(coef(lfit)[1:26])
-	
+	logR0 <- coef(lfit)[[1]]
 	
 	cdata <- data.frame(
 		param=c("R0", "rprob", "alpha"),
 		mean=c(exp(logR0), 1/coef(regfit)[[2]], coef(lfit)[[27]]),
-		lwr=c(exp(logR0-R0_sd), 1/confint(regfit, 2)[[2]],  confint(lfit, 27)[1]),
-		upr=c(exp(logR0+R0_sd), 1/confint(regfit, 2)[[1]], confint(lfit, 27)[2])
+		lwr=c(exp(confint(lfit, 1)[[1]]), 1/confint(regfit, 2)[[2]],  confint(lfit, 27)[1]),
+		upr=c(exp(confint(lfit, 1)[[2]]), 1/confint(regfit, 2)[[1]], confint(lfit, 27)[2])
 	)
 	
 	cdata$coverage <- c(
@@ -77,7 +76,7 @@ for (i in 1:nsim) {
 	fitlist[[i]] <- cdata
 	translist[[i]] <- data.frame(
 		time=1:26,
-		beta=unname(exp(coef(lfit)[1:26]))
+		beta=exp(predict(lfit, newdata = data.frame(biweek=factor(1:26), logIprev=0, offterm=0)))
 	)
 }
 

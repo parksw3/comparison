@@ -1,3 +1,4 @@
+library(splines)
 library(mgcv)
 load("../data/gillespie_sinusoidal_data.rda")
 

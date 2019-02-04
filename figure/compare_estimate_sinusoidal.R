@@ -52,8 +52,9 @@ ggplot(estdata) +
 transdata <- alltrans %>%
 	bind_rows(.id="type")
 
-ggplot(transdata) +
+gtrans <- ggplot(transdata) +
 	geom_line(aes(time, beta, group=interaction(sim, type)), alpha=0.2) +
 	stat_function(fun=function(x) (500/26 * (1 + 0.15 * cos(x * 2 * pi/26))), col=2, lwd=1) +
 	facet_wrap(~type)
 
+ggsave("compare_transmission.pdf", gtrans, width=6, height=4)
