@@ -71,7 +71,8 @@ for (i in init:nsim) {
 					  std.err=sqrt(diag(m@vcov))))
 	
 	if (!inherits(pp, "try-error")) {
-		cc <- confint(pp)
+		cc <- confint(pp, zmax=2, continuation="naive",
+					  std.err=sqrt(diag(m@vcov)))
 		
 		cdata <- data.frame(
 			param=c("R0", "rprob"),

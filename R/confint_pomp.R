@@ -1,8 +1,7 @@
 confint_pomp <- function(pomp_object,
 						 prob=0.95,
 						 par=c(1,2),
-						 delta=c(0.1, 0.05),
-						 maxit=20,
+						 delta=0.01,
 						 rwsd_arg,
 						 trace=FALSE,
 						 seed=101) {
@@ -25,22 +24,25 @@ confint_pomp <- function(pomp_object,
 		uplist <- list()
 		i <- 1
 		
-		while (abs(ldiff) < maxdiff && i < maxit) {
+		while (abs(ldiff) < maxdiff) {
 			## up
 			cc2 <- cc
-			cc2[p] <- cc[p] + delta[p] * i
+			cc2[p] <- cc[p] + delta * i
 			
 			mprof <- mif2(
 				pomp_object,
-				Nmif=100,
+				Nmif=50,
 				start=cc2,
-				Np=2000,
+				Np=1000,
 				cooling.fraction.50=0.95,
 				rw.sd=do.call(rw.sd, rwsd_arg[-p]),
 				transform=TRUE) %>%
-				continue(Nmif=100, cooling.fraction=0.1)
+				continue(Nmif=50, cooling.fraction=0.8) %>%
+				continue(Nmif=50, cooling.fraction=0.6) %>%
+				continue(Nmif=50, cooling.fraction=0.2) %>%
+				continue(Nmif=50, cooling.fraction=0.1)
 			
-			ll_prof <- logmeanexp(replicate(10,logLik(pfilter(mprof,Np=2000))),se=TRUE)
+			ll_prof <- logmeanexp(replicate(10,logLik(pfilter(mprof,Np=1000))),se=TRUE)
 			
 			ldiff <- ll_max[1] - ll_prof[1]
 			
@@ -61,22 +63,25 @@ confint_pomp <- function(pomp_object,
 		downlist <- list()
 		i <- 1
 		
-		while (abs(ldiff) < maxdiff && i < maxit) {
+		while (abs(ldiff) < maxdiff) {
 			## down
 			cc2 <- cc
-			cc2[p] <- cc[p] - delta[p] * i
+			cc2[p] <- cc[p] - delta * i
 			
 			mprof <- mif2(
 				pomp_object,
-				Nmif=100,
+				Nmif=50,
 				start=cc2,
-				Np=2000,
+				Np=1000,
 				cooling.fraction.50=0.95,
 				rw.sd=do.call(rw.sd, rwsd_arg[-p]),
 				transform=TRUE) %>%
-				continue(Nmif=100, cooling.fraction=0.1)
+				continue(Nmif=50, cooling.fraction=0.8) %>%
+				continue(Nmif=50, cooling.fraction=0.6) %>%
+				continue(Nmif=50, cooling.fraction=0.2) %>%
+				continue(Nmif=50, cooling.fraction=0.1)
 			
-			ll_prof <- logmeanexp(replicate(10,logLik(pfilter(mprof,Np=2000))),se=TRUE)
+			ll_prof <- logmeanexp(replicate(10,logLik(pfilter(mprof,Np=1000))),se=TRUE)
 			
 			ldiff <- ll_prof[1] - ll_max[1]
 			
@@ -96,7 +101,7 @@ confint_pomp <- function(pomp_object,
 			bind_rows
 		
 		pdata <- pdata[order(pdata[,p]),]
-	
+		
 		sfit <- spline(x=pdata[,p], y=pdata$ldiff)
 		
 		tt <- approx(sfit$y, sfit$x, xout=cutoff)$y
@@ -112,5 +117,4 @@ confint_pomp <- function(pomp_object,
 	
 	resdata
 }
-
 

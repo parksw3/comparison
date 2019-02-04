@@ -1,7 +1,6 @@
 library(dplyr)
 library(pomp)
 source("../R/fitfun_pomp_sinusoidal.R")
-source("../R/confint_pomp.R")
 
 load("../data/gillespie_sinusoidal_data.rda")
 
@@ -50,20 +49,11 @@ for (i in 1:nsim) {
 		continue(Nmif=100, cooling.fraction=0.2) %>%
 		continue(Nmif=100, cooling.fraction=0.1)
 	
-	cc <- confint_pomp(m, rwsd_arg=rwsd_arg, par=c(1, 3), trace=TRUE)
-	
 	cdata <- data.frame(
 		param=c("R0", "rprob"),
-		mean=coef(m)[[1]], coef(m)[[3]],
-		lwr=c(cc$lwr),
-		upr=c(cc$upr)
+		mean=coef(m)[[1]], coef(m)[[3]]
 	)
-	
-	cdata$coverage <- c(
-		cdata$lwr[1] < 500/26 && 500/26 < cdata$upr[1],
-		cdata$lwr[2] < 0.7 && 0.7 < cdata$upr[2]
-	)
-	
+
 	fitlist[[i]] <- cdata
 	translist[[i]] <- data.frame(
 		time=seq(1, 26, by=0.01),
