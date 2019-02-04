@@ -3,6 +3,10 @@ library(deSolve)
 library(bbmle)
 load("../data/gillespie_sinusoidal_data.rda")
 
+if (fe <- file.exists("sinusoidal_trajectory_fit.rda")) {
+	load("sinusoidal_trajectory_fit.rda")
+}
+
 sir <- function(t, state, parameters) {
 	with(as.list(c(state, parameters)), {
 		beta <- b0 * (1 + b1 * cos(2 * pi * t/ 26))
@@ -45,9 +49,13 @@ parnames(objfun) <- c("log.b0", "logit.b1", "logit.rprob",
 N <- 5e6
 nsim <- length(datalist)
 
-reslist <- fitlist <- translist <- vector('list', nsim)
+if (!fe) {
+	reslist <- fitlist <- translist <- vector('list', nsim)
+}
 
-for (i in 1:nsim) {
+init <- sum(sapply(fitlist, length) > 0) + 1
+
+for (i in init:nsim) {
 	print(i)
 	dd <- datalist[[i]]
 	
@@ -57,24 +65,29 @@ for (i in 1:nsim) {
 	m <- mle2(objfun, start, data=list(data=dd), vecpar=TRUE, method="BFGS")
 	
 	m@details$hessian <- as.matrix(nearPD(m@details$hessian)$mat)
+	m@vcov <- MASS::ginv(m@details$hessian)
 	
-	pp <- profile(m, which=c(1, 3), trace=TRUE, zmax=2, continuation="naive")
+	pp <- try(profile(m, which=c(1, 3), trace=TRUE, zmax=2, continuation="naive",
+					  std.err=sqrt(diag(m@vcov))))
 	
-	cc <- confint(pp)
+	if (!inherits(pp, "try-error")) {
+		cc <- confint(pp)
+		
+		cdata <- data.frame(
+			param=c("R0", "rprob"),
+			mean=c(exp(coef(m))[[1]], plogis(coef(m))[[3]]),
+			lwr=c(exp(cc[1,1]), plogis(cc[2,1])),
+			upr=c(exp(cc[1,2]), plogis(cc[2,2]))
+		)
+		
+		cdata$coverage <- c(
+			cdata$lwr[1] < 500/26 && 500/26 < cdata$upr[1],
+			cdata$lwr[2] < 0.7 && 0.7 < cdata$upr[2]
+		)
+		
+		fitlist[[i]] <- cdata
+	}
 	
-	cdata <- data.frame(
-		param=c("R0", "rprob"),
-		mean=c(exp(coef(m))[[1]], plogis(coef(m))[[3]]),
-		lwr=c(exp(cc[1,1]), plogis(cc[2,1])),
-		upr=c(exp(cc[1,2]), plogis(cc[2,2]))
-	)
-	
-	cdata$coverage <- c(
-		cdata$lwr[1] < 500/26 && 500/26 < cdata$upr[1],
-		cdata$lwr[2] < 0.7 && 0.7 < cdata$upr[2]
-	)
-	
-	fitlist[[i]] <- cdata
 	translist[[i]] <- data.frame(
 		time=seq(1, 26, by=0.01),
 		beta=exp(coef(m)[[1]]) * (1 + plogis(coef(m)[[2]]) * cos(2 * pi * seq(1, 26, by=0.01)/26))
