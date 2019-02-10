@@ -23,9 +23,9 @@ sir <- function(t, state, parameters) {
 	with(as.list(c(state, parameters)), {
 		beta <- b0 * (1 + b1 * cos(2 * pi * t/ 26))
 		I <- exp(logI)
-		dS <- mu * N - beta * S * I/N
-		dlogI <- beta * S/N - gamma
-		dR <- gamma * I
+		dS <- mu * (N-S) - beta * S * I/N
+		dlogI <- beta * S/N - gamma - mu
+		dR <- gamma * I ## counts cumulative death
 		dC <- beta * S * I/N
 		list(c(dS, dlogI, dR, dC))
 	})

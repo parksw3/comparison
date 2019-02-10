@@ -5,7 +5,9 @@ ratefun <- function(x,param,t) {
 		c(
 			birth=mu*N,
 			inf=beta*S*I/N,  ## scale infection by pop size
-			recover=gamma*I)
+			recover=gamma*I,
+			deathS=mu*S,
+			deathI=mu*I)
 	})
 }
 
@@ -13,6 +15,8 @@ transfun <- function(x,w) {
 	switch(w,
 		   x + c(1, 0),
 		   x + c(-1,1),
+		   x + c(0,-1),
+		   x + c(-1,0),
 		   x + c(0,-1)
 	)   
 }

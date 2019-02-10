@@ -90,11 +90,12 @@ g3 <- ggplot(estdata) +
 	scale_colour_discrete("Estimation") +
 	xlab("")
 
-g_legend<-function(a.gplot){
+g_legend<-function(a.gplot) {
 	tmp <- ggplot_gtable(ggplot_build(a.gplot))
 	leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
 	legend <- tmp$grobs[[leg]]
-	return(legend)}
+	return(legend)
+}
 
 mylegend<-g_legend(g1)
 
@@ -104,5 +105,3 @@ gcomp <- arrangeGrob(arrangeGrob(nl(g1), nl(g2), nl(g3), nrow=1), mylegend,
 					 nrow=1, widths=c(10, 1))
 
 ggsave("compare_estimate_sir.pdf", gcomp, width=12, height=4)
-
-

@@ -29,14 +29,14 @@ The susceptible-infected-recovered (SIR) model is one of the simplest epidemic m
 In general, the SIR model can be written as 
 \begin{equation}
 \begin{aligned}
-\frac{dS}{dt} &= b(t) - \phi(t) S\\
-\frac{dI}{dt} &= \phi(t) S - \gamma I\\
-\frac{dR}{dt} &= \gamma I
+\frac{dS}{dt} &= b(t) - (\phi(t) + \mu) S\\
+\frac{dI}{dt} &= \phi(t) S - (\gamma + \mu) I\\
+\frac{dR}{dt} &= \gamma I - \mu R
 \end{aligned}
 \label{eq:sir}
 \end{equation}
 where $S$, $I$, and $R$ describe the number of susceptible, infected, and recovered individuals.
-$b(t)$ represents recruitment rate to the susceptible population, and $\gamma$ represents per-capita recovery rate.
+$b(t)$ represents recruitment rate to the susceptible population, $\mu$ represents natural mortality rate, and $\gamma$ represents per-capita recovery rate.
 $\phi(t)$ represents force of infection, which is defined as the rate at which a susceptible individual acquires infection.
 We write $\phi(t) = \beta(t) I/N$ to represent \textit{frequency}-dependent action or $\phi(t) = \beta I$ to represent \textit{density}-dependent action, where $N = S + I + R$ is the total population size.
 %% heterogeneity and what not
@@ -106,11 +106,11 @@ If we can reconstruct the dynamics of the susceptible population and assume that
 
 Observe that
 \begin{equation}
-\frac{d \log\hat{I}}{dt} = \beta(t) \frac{S}{N} - \gamma,
+\frac{d \log\hat{I}}{dt} = \beta(t) \frac{S}{N} - (\gamma + \mu),
 \end{equation}
 If we can obtain a reasonable estimate of the gradient $Z_i = d \log \hat{I}/dt (t_i)$, we can write
 \begin{equation}
-Z_i + \gamma = \exp \left(\log \beta (t_i) + \log S_i - \log N \right)  + \epsilon_i
+Z_i + (\gamma + \mu) = \exp \left(\log \beta (t_i) + \log S_i - \log N \right)  + \epsilon_i
 \end{equation}
 and estimate $\beta$, given that we can reconstruct the susceptible dynamics $S_i$.
 Estimate of $\beta$ can be done using nonparametric regression by treating $\log S_i$ and $\log N$ as offset terms.
@@ -169,7 +169,7 @@ Hazard-based model:
 \begin{equation}
 \begin{aligned}
 S_{t + \Delta t} &= B_t + S_t - S_t \left(1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\right)\right)\\
-I_{t + \Delta t} &= S_t \left( 1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\right)\right) + I_t - I_t (1 - \exp(-\gamma \Delta t))
+I_{t + \Delta t} &= S_t \left( 1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\right)\right) + I_t - I_t (1 - \exp(-(\gamma + \mu) \Delta t))
 \end{aligned}
 \end{equation}
 Tries to account for variation in ... but still ... When are these assumptions appropriate?
@@ -249,7 +249,6 @@ First, we compare how the dynamics of a system depend on the value of $\Delta t$
 	\item Synthetic likelihood
 \end{itemize}
 
-
 \section{Bibliography}
 
 \bibliography{thesis}
@@ -289,9 +288,6 @@ and the initial growth rate is given by
 \begin{equation}
 r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right).
 \end{equation}
-
-
-
 
 
 

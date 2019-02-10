@@ -17,7 +17,8 @@ for (i in 1:nsim) {
 		time=gg[,1],
 		birth=cumsum(gg[,2]==1),
 		incidence=cumsum(gg[,2]==2),
-		prevalence=cumsum((gg[,2]==2) - (gg[,2]==3)) + 1e-4 * 5e6,
+		susceptible=cumsum((gg[,2]==1) - (gg[,2]==2) - (gg[,2]==4)) + 0.05 * 5e6,
+		prevalence=cumsum((gg[,2]==2) - (gg[,2]==3) - (gg[,2]==5)) + 1e-4 * 5e6,
 		recovery=cumsum(gg[,2]==3)
 	)
 	
