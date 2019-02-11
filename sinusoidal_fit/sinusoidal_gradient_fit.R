@@ -10,7 +10,7 @@ translist <- vector('list', nsim)
 
 for (i in 1:nsim) {
 	print(i)
-	dd <- datalist[[i]]
+	dd <- datalist[[i]][1:(26*9),]
 	
 	regdata <- data.frame(
 		x=cumsum(dd$incidence),
@@ -24,14 +24,14 @@ for (i in 1:nsim) {
 	
 	logI <- log(dd$incidence)
 	
-	gfit <- MASS::glm.nb(incidence~ns(time, knots=seq(1, 260, by=6)), data=dd)
+	gfit <- MASS::glm.nb(incidence~ns(time, knots=seq(1, nrow(dd), by=6)), data=dd)
 	
 	S0vec <- seq(0.03, 0.07, by=0.001)
 	llvec <- rep(NA, length(S0vec))
 	
 	for (j in 1:length(S0vec)) {
 		fitdata <- data.frame(
-			grad=diff(predict(gfit, newdata = data.frame(time=1:261)))+1,
+			grad=diff(predict(gfit, newdata = data.frame(time=1:(nrow(dd)+1))))+1,
 			logS=log(S0vec[j]*N + Z),
 			biweek=dd$biweek
 		)
@@ -47,7 +47,7 @@ for (i in 1:nsim) {
 	j <- which.max(llvec)
 	
 	fitdata <- data.frame(
-		grad=diff(predict(gfit, newdata = data.frame(time=1:261)))+1,
+		grad=diff(predict(gfit, newdata = data.frame(time=1:(nrow(dd)+1))))+1,
 		logS=log(S0vec[j]*N + Z),
 		biweek=dd$biweek
 	)

@@ -18,8 +18,8 @@ sir <- function(t, state, parameters) {
 	with(as.list(c(state, parameters)), {
 		beta <- b0 * (1 + b1 * cos(2 * pi * t/ 26))
 		I <- exp(logI)
-		dS <- mu * N - beta * S * I/N
-		dlogI <- beta * S/N - gamma
+		dS <- mu * (N - S) - beta * S * I/N
+		dlogI <- beta * S/N - gamma - mu
 		dR <- gamma * I
 		dC <- beta * S * I/N
 		list(c(dS, dlogI, dR, dC))
@@ -78,9 +78,9 @@ g <- ggplot(graddata) +
 	scale_color_manual(values=c("black", "red")) +
 	theme(
 		panel.grid = element_blank(),
-		legend.position = c(0.9, 0.95),
+		legend.position = c(0.9, 0.9),
 		legend.title = element_blank(),
 		legend.direction="horizontal"
 	)
 
-ggsave("gradient_matching_sinusoidal.pdf", g, width=8, height=6)
+ggsave("gradient_matching_sinusoidal.pdf", g, width=8, height=3)

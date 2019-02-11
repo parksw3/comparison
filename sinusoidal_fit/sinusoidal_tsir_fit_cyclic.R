@@ -9,7 +9,7 @@ translist <- vector('list', nsim)
 
 for (i in 1:nsim) {
 	print(i)
-	dd <- datalist[[i]]
+	dd <- datalist[[i]][1:(26*9),]
 	
 	regdata <- data.frame(
 		x=cumsum(dd$incidence),

@@ -1,4 +1,5 @@
 \documentclass{article}
+\usepackage[top=1in,left=1in, right = 1in, footskip=1in]{geometry}
 
 \usepackage{amsthm}
 \usepackage{amsmath}
@@ -56,6 +57,7 @@ Then, we can write
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{../figure/inc_prev_mort.pdf}
+\caption{This is not a caption.}
 \end{figure}
 
 We want to distinguish among different kinds of data: prevalence, incidence, and mortality.
@@ -78,7 +80,7 @@ In this article, we focus on fitting to incidence data only.
 In particular, we consider two kinds of models: continuous deterministic models and discrete stochastic models.
 We do not consider fitting continuous stochastic models because they are computationally too expensive.
 
-\section{Fitting continuous deterministic models}
+\section{Fitting continuous models}
 
 \subsection{Trajectory matching}
 
@@ -96,6 +98,7 @@ We prefer this model compared to the binomial or beta-binomial model because fit
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{../figure/gradient_matching_sinusoidal.pdf}
+\caption{This is not a caption.}
 \end{figure}
 
 When \emph{all} state variables are observed, we can fit smooth curves to the data and obtain an estimate of the gradients of the ODE by taking the derivatives of the estimated smooth functions.
@@ -123,8 +126,6 @@ This is because incidence precedes prevalence???
 
 If we simply construct confidence intervals based on equation ?? we underestimate uncertainty significantly by ignoring the uncertainty in the estimated gradients $Z_i$.
 
-
-
 Conditions:
 \begin{itemize}
 	\item See Jost and Ellner (???)
@@ -145,25 +146,45 @@ Generalized profiling combines trajectory matching with gradient matching.
 What is this? Read Reuman et al. 2006
 %% https://www.pnas.org/content/pnas/103/49/18860.full.pdf
 
+\section{Fitting discrete time models}
 
-\section{Discrete-time SIR model}
+\subsection{Time-series SIR}
 
-\subsection{Time-series SIR model}
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{../figure/tsir_factorial_fig.pdf}
+\caption{This is not a caption.}
+\end{figure}
 
-TSIR:
+The time-series SIR (TSIR) method was introduced by \cite{bjornstad2002dynamics} to estimate seasonally varying transmission rates of measles.
+It relies on reconstructing the susceptible dynamics from birth and case reports and using linear regression, conditional on knowing ``true susceptible dynamics'', to estimate transmission rates.
+Initial conditions are often estimated to improve goodness of fit.
+%% something about initial step
+
+The TSIR method begins by discretizing the infection process, assuming that disease generation-time is equal to reporting interval:
 \begin{equation}
 \begin{aligned}
-S_{t + \Delta t} &= B_t + S_t - \beta_t S_t \frac{I_t}{N_t} \Delta t\\
-I_{t + \Delta t} &= \beta_t S_t \frac{I_t}{N_t} \Delta t
+S_{t+1} &= B_t + S_t - \beta_t S_t \frac{I_t^\alpha}{N_t}
+I_{t+1} &= \beta_t S_t \frac{I_t^\alpha}{N_t}
 \end{aligned}
 \end{equation}
-Assumptions are:
-\begin{itemize}
-	\item Fixed generation time
-	\item Linear probability of infection
-\end{itemize}
+where $\alpha$ is often referred to as a conversion factor from continuous-time model to discrete-time model or a heterogeneity parameter [CITE].
+True incidence, $I_t$, is inferred from the observed incidence, $y_t$, and estimated reporting rate $\rho_t$: $I_t = y_t/\rho_t$.
+Taking log on both sides, estimation of transmission rates $\beta_t$ becomes a regression problem:
+\begin{equation}
+\log I_{t + \Delta t} = \log \beta_t + \log S_t + \alpha \log I_t - \log N_t + \epsilon_t.
+\end{equation}
 
-\subsection{Hazard-based model}
+The estimation process is deterministic, but the TSIR method is analogous to fitting a stochastic model: 
+equation ?? models step-ahead prediction as a function of previous state and process error, $\epsilon_t$. 
+Coupled with a deterministic susceptible reconstruction and estimation of reporting rate, the TSIR method attributes all errors to one-step process noise and oversmooths the likelihood surface (figure ?).
+Several studies have associated dynamics of the deterministic model (equation ??) with the inferred parameters from the regression but they are intrinsically different models.
+
+\subsection{Particle filtering}
+
+Particle filtering provides a way of approximating the likelihood for stochastic models.
+In this paper, we focus on mif2 method.
+
+
 
 Hazard-based model:
 \begin{equation}
@@ -174,8 +195,60 @@ I_{t + \Delta t} &= S_t \left( 1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\ri
 \end{equation}
 Tries to account for variation in ... but still ... When are these assumptions appropriate?
 
-\subsection{Generation-based model}
 
+\subsection{MCMC}
+
+\subsection{Probe-based methods}
+
+\section{Results}
+
+\subsection{Statistical inference}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{../figure/compare_estimate_sir.pdf}
+\end{figure}
+
+
+
+\bibliography{thesis}
+
+\pagebreak
+
+\section{Appendix}
+
+\subsection{Derivation of growth rate in discrete-time SIR model}
+
+
+Derivation:
+\begin{equation}
+\begin{aligned}
+S_{t+\Delta t} &= S_t - S_t (1- \exp(-\beta I_t \Delta t/N))\\
+I_{t+\Delta t} &= S_t (1- \exp(-\beta I_t \Delta t/N)) + I_t - I_t (1- \exp(-\gamma \Delta t))
+\end{aligned}
+\end{equation}
+Assuming tat $S_t$ is approximately equal to $N$, we get
+\begin{equation}
+I_{t+\Delta t} = N_t (1- \exp(-\beta I_t \Delta t/N)) + I_t \exp(-\gamma \Delta t)
+\end{equation}
+When $I_t \approx 0$, $\exp(-\beta I_t \Delta t/N) \approx 1 - \beta I_t \Delta t/N$ and so
+\begin{equation}
+\begin{aligned}
+I_{t+\Delta t} &\approx  I_t \beta \Delta t + I_t \exp(-\gamma \Delta t)\\
+&= I_t (\beta \Delta t + \exp(-\gamma \Delta t))
+\end{aligned}
+\end{equation}
+Substituting $\hat{\gamma}$, we get
+\begin{equation}
+I_{t+\Delta t} = I_t \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right),
+\end{equation}
+Therefore,
+\begin{equation}
+I_{t} = I_0 \left(1 + \beta\Delta t - \frac{\Delta t}{\mu}\right)^{t/\Delta t}
+\end{equation}
+and the initial growth rate is given by
+\begin{equation}
+r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right).
+\end{equation}
 
 
 
@@ -229,65 +302,6 @@ Then, we can obtain a relationship between $\mathcal R$ of a discrete-time syste
 \end{equation}
 
 On the other hand, we may want to match choose $\beta$ and $\mu$ to match true $r$ and $\mathcal R$.
-
-
-
-% We find that the formula for reproduction number suggested by \cite{he2009plug} only holds when generation interval is held constant.
-
-First, we compare how the dynamics of a system depend on the value of $\Delta t$?
-
-
-
-\section{Model fitting}
-
-\begin{itemize}
-	\item Trajectory matching
-	\item Gradient matching
-	\item Generalized profiling
-	\item TSIR
-	\item Particle filter
-	\item Synthetic likelihood
-\end{itemize}
-
-\section{Bibliography}
-
-\bibliography{thesis}
-
-\section{Appendix}
-
-\subsection{Derivation of growth rate in discrete-time SIR model}
-
-
-Derivation:
-\begin{equation}
-\begin{aligned}
-S_{t+\Delta t} &= S_t - S_t (1- \exp(-\beta I_t \Delta t/N))\\
-I_{t+\Delta t} &= S_t (1- \exp(-\beta I_t \Delta t/N)) + I_t - I_t (1- \exp(-\gamma \Delta t))
-\end{aligned}
-\end{equation}
-Assuming tat $S_t$ is approximately equal to $N$, we get
-\begin{equation}
-I_{t+\Delta t} = N_t (1- \exp(-\beta I_t \Delta t/N)) + I_t \exp(-\gamma \Delta t)
-\end{equation}
-When $I_t \approx 0$, $\exp(-\beta I_t \Delta t/N) \approx 1 - \beta I_t \Delta t/N$ and so
-\begin{equation}
-\begin{aligned}
-I_{t+\Delta t} &\approx  I_t \beta \Delta t + I_t \exp(-\gamma \Delta t)\\
-&= I_t (\beta \Delta t + \exp(-\gamma \Delta t))
-\end{aligned}
-\end{equation}
-Substituting $\hat{\gamma}$, we get
-\begin{equation}
-I_{t+\Delta t} = I_t \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right),
-\end{equation}
-Therefore,
-\begin{equation}
-I_{t} = I_0 \left(1 + \beta\Delta t - \frac{\Delta t}{\mu}\right)^{t/\Delta t}
-\end{equation}
-and the initial growth rate is given by
-\begin{equation}
-r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right).
-\end{equation}
 
 
 
