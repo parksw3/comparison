@@ -18,15 +18,16 @@ classify <- data.frame(
 	est=c("Simulation", "Regression", "Regression", "Simulation")
 )
 
-allcover <- list()
+allcover_sir <- list()
+allcover_tsir <- list()
 
 load("../sir_fit/trajectory_fit.rda")
 
-allcover$trajectory <- bind_rows(fitlist, .id="sim")
+allcover_sir$trajectory <- bind_rows(fitlist, .id="sim")
 
 load("../sir_fit/gradient_fit.rda")
 
-allcover$gradient <- bind_rows(fitlist, .id="sim")
+allcover_sir$gradient <- bind_rows(fitlist, .id="sim")
 
 templist <- list()
 for (i in 0:9) {
@@ -39,17 +40,47 @@ for (i in 0:9) {
 		mutate(sim=as.character(as.numeric(sim)+i*10))
 }
 
-allcover$pomp <- bind_rows(templist)
+allcover_sir$pomp <- bind_rows(templist)
 
 load("../sir_fit/tsir_fit.rda")
 
-allcover$tsir <- bind_rows(fitlist, .id="sim")
+allcover_sir$tsir <- bind_rows(fitlist, .id="sim")
 
-alldata <- bind_rows(allcover, .id="type")
+load("../tsir_fit/tsir_trajectory_fit.rda")
+
+allcover_tsir$trajectory <- bind_rows(fitlist, .id="sim")
+
+load("../tsir_fit/tsir_gradient_fit.rda")
+
+allcover_tsir$gradient <- bind_rows(fitlist, .id="sim")
+
+templist <- list()
+for (i in 0:9) {
+	fn <- paste0("../tsir_fit/tsir_pomp_0_1_fit_", i, ".rda")
+	
+	load(fn)
+	
+	templist[[i+1]] <- fitlist %>% 
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+}
+
+allcover_tsir$pomp <- bind_rows(templist)
+
+load("../tsir_fit/tsir_tsir_fit.rda")
+
+allcover_tsir$tsir <- bind_rows(fitlist, .id="sim")
+
+alldata_sir <- bind_rows(allcover_sir, .id="type") %>%
+	mutate(sim="gillespie")
+alldata_tsir <- bind_rows(allcover_tsir, .id="type") %>%
+	mutate(sim="tsir")
+
+alldata <- rbind(alldata_sir, alldata_tsir)
 
 estdata <- alldata %>%
 	filter(param %in% c("beta")) %>%
-	group_by(param, type) %>%
+	group_by(param, type, sim) %>%
 	mutate(error=log(mean/2)) %>%
 	summarize(
 		bias=mean(error),
@@ -73,6 +104,7 @@ g1 <- ggplot(estdata) +
 	scale_y_continuous("Coverage probability", limits=c(0, 1)) +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
+	ggtitle("Gillespie simulation") +
 	xlab("")
 
 g2 <- ggplot(estdata) +
@@ -81,13 +113,16 @@ g2 <- ggplot(estdata) +
 	scale_y_continuous("Bias") +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
+	ggtitle("") +
 	xlab("")
 	
 g3 <- ggplot(estdata) +
+	geom_hline(yintercept=0, lty=1) +
 	geom_point(aes(type, RMSE, shape=time, col=est), size=5) +
 	scale_y_continuous("RMSE") +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
+	ggtitle("") +
 	xlab("")
 
 g_legend<-function(a.gplot) {
@@ -101,7 +136,16 @@ mylegend<-g_legend(g1)
 
 nl <- function(x) x + theme(legend.position = "none")
 
-gcomp <- arrangeGrob(arrangeGrob(nl(g1), nl(g2), nl(g3), nrow=1), mylegend,
-					 nrow=1, widths=c(10, 1))
+gcomp <- arrangeGrob(
+	arrangeGrob(nl(g1) %+% filter(estdata, sim=="gillespie"), 
+				nl(g2) %+% filter(estdata, sim=="gillespie"), 
+				nl(g3) %+% filter(estdata, sim=="gillespie"),
+				nl(g1) %+% filter(estdata, sim=="tsir") + ggtitle("tSIR simulation"), 
+				nl(g2) %+% filter(estdata, sim=="tsir"), 
+				nl(g3) %+% filter(estdata, sim=="tsir"),
+				nrow=2), 
+	mylegend,
+	nrow=1, widths=c(10, 1)
+)
 
-ggsave("compare_estimate_sir.pdf", gcomp, width=12, height=4)
+ggsave("compare_estimate_sir.pdf", gcomp, width=12, height=8)

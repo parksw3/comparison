@@ -163,7 +163,7 @@ Initial conditions are often estimated to improve goodness of fit.
 The TSIR method begins by discretizing the infection process, assuming that disease generation-time is equal to reporting interval:
 \begin{equation}
 \begin{aligned}
-S_{t+1} &= B_t + S_t - \beta_t S_t \frac{I_t^\alpha}{N_t}
+S_{t+1} &= B_t + S_t - I_{t+1}
 I_{t+1} &= \beta_t S_t \frac{I_t^\alpha}{N_t}
 \end{aligned}
 \end{equation}
@@ -171,7 +171,7 @@ where $\alpha$ is often referred to as a conversion factor from continuous-time 
 True incidence, $I_t$, is inferred from the observed incidence, $y_t$, and estimated reporting rate $\rho_t$: $I_t = y_t/\rho_t$.
 Taking log on both sides, estimation of transmission rates $\beta_t$ becomes a regression problem:
 \begin{equation}
-\log I_{t + \Delta t} = \log \beta_t + \log S_t + \alpha \log I_t - \log N_t + \epsilon_t.
+\log I_{t + 1} = \log \beta_t + \log S_t + \alpha \log I_t - \log N_t + \epsilon_t.
 \end{equation}
 
 The estimation process is deterministic, but the TSIR method is analogous to fitting a stochastic model: 
@@ -184,9 +184,6 @@ Several studies have associated dynamics of the deterministic model (equation ??
 Particle filtering provides a way of approximating the likelihood for stochastic models.
 In this paper, we focus on mif2 method.
 
-
-
-Hazard-based model:
 \begin{equation}
 \begin{aligned}
 S_{t + \Delta t} &= B_t + S_t - S_t \left(1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\right)\right)\\
@@ -195,8 +192,24 @@ I_{t + \Delta t} &= S_t \left( 1- \exp\left(-\beta_t \frac{I_t}{N_t} \Delta t\ri
 \end{equation}
 Tries to account for variation in ... but still ... When are these assumptions appropriate?
 
+\subsection{Incidence-based models}
 
-\subsection{MCMC}
+\cite{li2018fitting} compared incidence-based models across several Bayesian platforms.
+In our case, we can write a similar model as:
+\begin{equation}
+\begin{aligned}
+S_{t + \Delta t} &= B_t + S_t - I_{t+\Delta t}\\
+\phi_t &= \sum_{i=1}^\ell k(i) I_{t - \ell +i}\\
+I_{t + \Delta t} &\sim \mathrm{BetaBin}(1- e^{-\phi_t}, S_t,\delta_P)\\
+\mathrm{Obs}_t &\sim \mathrm{NegBin}(P_{rep}, \sum I_t, \delta_{obs})
+\end{aligned}
+\end{equation}
+When reporting period is same as the mean generation time, we want to simulate the model on a finer scale.
+
+Disadvantage: unable to model mechanisms; difficult to deal with prevalence or mortality data.
+Advantage: flexible generation time distribution.
+
+
 
 \subsection{Probe-based methods}
 

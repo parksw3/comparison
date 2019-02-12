@@ -62,6 +62,11 @@ for (i in (init+1):nsim) {
 	
 	cc <- confint(m, c(1, 2))
 	
+	while("mle2" %in% class(cc)) {
+		cc@vcov <- m@vcov
+		cc <- confint(cc, c(1, 2))
+	}
+	
 	cdata <- data.frame(
 		param=c("beta", "rprob", "I0", "size"),
 		mean=c(exp(coef(m))[[1]], plogis(coef(m))[[2]], plogis(coef(m))[[3]], exp(coef(m))[[4]]),

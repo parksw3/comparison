@@ -19,35 +19,23 @@ load("../sinusoidal_fit/sinusoidal_gradient_fit.rda")
 allcover$gradient <- bind_rows(fitlist, .id="sim")
 alltrans$gradient <- bind_rows(translist, .id="sim")
 
-alldata <- bind_rows(allcover, .id="type")
+templist <- templist2 <- list()
+for (i in 0:9) {
+	fn <- paste0("../sinusoidal_fit/sinusoidal_pomp_0_1_fit_", i, ".rda")
+	
+	load(fn)
+	
+	templist[[i+1]] <- fitlist %>% 
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+	
+	templist2[[i+1]] <- translist %>% 
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+}
 
-coverdata <- alldata %>%
-	filter(param %in% c("R0", "rprob")) %>%
-	group_by(param, type) %>%
-	summarize(
-		cover=mean(coverage)
-	)
-
-ggplot(coverdata) +
-	geom_rect(xmin=-Inf, xmax=Inf, ymin=0.887, ymax=0.983, alpha=0.1) +
-	geom_point(aes(type, cover), size=2) +
-	geom_hline(yintercept=0.95, lty=2) +
-	scale_y_continuous("Coverage probability", limits=c(0, 1)) +
-	facet_wrap(~param, scale="free_x")
-
-estdata <- alldata %>%
-	filter(param %in% c("R0", "rprob")) %>%
-	group_by(param, type) %>%
-	summarize(
-		est.mean=mean(mean),
-		est.lwr=quantile(mean, 0.025),
-		est.upr=quantile(mean, 0.975)
-	)
-
-ggplot(estdata) +
-	geom_point(aes(type, est.mean), size=2) +
-	geom_errorbar(aes(type, ymin=est.lwr, ymax=est.upr), width=0.1, lwd=1) +
-	facet_wrap(~param, scale="free")
+allcover$pomp <- bind_rows(templist, .id="sim")
+alltrans$pomp <- bind_rows(templist2, .id="sim")
 
 transdata <- alltrans %>%
 	bind_rows(.id="type")
