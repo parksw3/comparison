@@ -1,5 +1,4 @@
 model {
-	Gmean ~ dgamma(1000, 1000)
 	Gvar ~ dgamma(10, 10)
 	
 	Gscale <- Gvar/Gmean

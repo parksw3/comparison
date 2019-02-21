@@ -1,10 +1,10 @@
 library(rjags)
-load("../data/gillespie_data.rda")
+load("../data/tsir_data.rda")
 
 argvals <- commandArgs(trailingOnly=TRUE)
 batch_num <- as.numeric(argvals[1])
 
-fn <- paste0("jags_fit_", batch_num, ".rda")
+fn <- paste0("tsir_jags_fit_", batch_num, ".rda")
 
 nsim <- 10
 
@@ -16,7 +16,7 @@ for (i in 1:nsim) {
 	
 	j <- batch_num * 10 + i
 	
-	dd <- datalist[[j]][1:20,]
+	dd <- datalist[[j]]
 	
 	jagsdata <- list(
 		ell=40,
