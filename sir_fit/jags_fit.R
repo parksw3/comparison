@@ -1,14 +1,22 @@
 library(rjags)
 load("../data/gillespie_data.rda")
 
-nsim <- length(datalist)
+argvals <- commandArgs(trailingOnly=TRUE)
+batch_num <- as.numeric(argvals[1])
 
-fitlist <- vector('list', nsim)
+fn <- paste0("jags_fit_", batch_num, ".rda")
 
+nsim <- 10
+
+jagslist <- fitlist <- vector('list', nsim)
+
+set.seed(101)
 for (i in 1:nsim) {
 	print(i)
 	
-	dd <- datalist[[i]][1:20,]
+	j <- batch_num * 10 + i
+	
+	dd <- datalist[[j]][1:20,]
 	
 	jagsdata <- list(
 		ell=40,
@@ -25,9 +33,7 @@ for (i in 1:nsim) {
 	
 	update(jags, 2000)
 	
-	jj <- jags.samples(jags,c("I", "mu", "R0", "reporting", "Gmean", "Gvar", "r",
-							  "khat", "k", "I0"), 2000)
-	
+	jj <- jags.samples(jags,c("R0", "r", "reporting", "I0"), 2000, thin=10)
 	
 	cdata <- data.frame(
 		param=c("R0", "rprob", "I0", "size"),
@@ -35,7 +41,6 @@ for (i in 1:nsim) {
 		lwr=c(quantile(jj$R0, 0.025), quantile(jj$reporting, 0.025), NA, NA),
 		upr=c(quantile(jj$R0, 0.975), quantile(jj$reporting, 0.975), NA, NA)
 	)
-	
 	
 	cdata$coverage <- c(
 		cdata$lwr[1] < 2 && 2 < cdata$upr[1],
@@ -45,8 +50,9 @@ for (i in 1:nsim) {
 	)
 	
 	fitlist[[i]] <- cdata
+	jagslist[[i]] <- jj
 	
-	save("fitlist", file="jags_fit.rda")
+	save("fitlist", "jagslist", file=fn)
 }
 
-save("fitlist", file="jags_fit.rda")
+save("fitlist", "jagslist", file=fn)

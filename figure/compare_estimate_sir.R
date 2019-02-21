@@ -13,9 +13,9 @@ scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,p
 scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
 
 classify <- data.frame(
-	type=c("trajectory", "gradient", "tsir", "pomp"),
-	time=c("Continuous", "Continuous", "Discrete", "Discrete"),
-	est=c("Simulation", "Regression", "Regression", "Simulation")
+	type=c("trajectory", "gradient", "tsir", "pomp", "renewal"),
+	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete"),
+	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation")
 )
 
 allcover_sir <- list()
@@ -41,6 +41,10 @@ for (i in 0:9) {
 }
 
 allcover_sir$pomp <- bind_rows(templist)
+
+load("../sir_fit/jags_fit.rda")
+
+allcover_sir$renewal <- bind_rows(fitlist, .id="sim")
 
 load("../sir_fit/tsir_fit.rda")
 
@@ -79,7 +83,8 @@ alldata_tsir <- bind_rows(allcover_tsir, .id="type") %>%
 alldata <- rbind(alldata_sir, alldata_tsir)
 
 estdata <- alldata %>%
-	filter(param %in% c("beta")) %>%
+	mutate(param=ifelse(param=="beta", "R0", param)) %>%
+	filter(param %in% c("R0")) %>%
 	group_by(param, type, sim) %>%
 	mutate(error=log(mean/2)) %>%
 	summarize(
@@ -90,11 +95,12 @@ estdata <- alldata %>%
 	ungroup %>%
 	merge(classify) %>%
 	mutate(
-		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp"),
+		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal"),
 					labels=c("trajectory\nmatching",
 							 "gradient\nmatching",
 							 "tSIR",
-							 "POMP"))
+							 "POMP",
+							 "Renewal"))
 	)
 
 g1 <- ggplot(estdata) +

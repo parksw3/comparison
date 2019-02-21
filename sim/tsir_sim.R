@@ -1,4 +1,4 @@
-source("../R/gillespie.R")
+source("../R/tsir_.R")
 
 nsim <- 100
 reslist <- vector('list', nsim)
