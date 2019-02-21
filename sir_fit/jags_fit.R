@@ -28,7 +28,7 @@ for (i in 1:nsim) {
 	
 	jags <- jags.model('../bugscode/sir.bug',
 					   data = jagsdata,
-					   n.chains = 1,
+					   n.chains = 4,
 					   n.adapt = 2000)
 	
 	update(jags, 2000)

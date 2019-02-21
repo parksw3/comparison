@@ -1,0 +1,48 @@
+model {
+	Gmean ~ dgamma(1000, 1000)
+	Gvar ~ dgamma(10, 10)
+	
+	Gscale <- Gvar/Gmean
+	Gshape <- Gmean/Gscale
+	
+	reporting ~ dunif(0, 1)
+	R0 ~ dgamma(10, 5)
+	r ~ dgamma(0.01, 0.01)
+	I0 ~ dpois(10)
+
+	## set ell = 30 in R
+	for (i in 1:ell) {
+		khat[i] <- (i/nstep)^(Gshape - 1) * exp(-(i/nstep)/Gscale)
+	}
+	
+	for (i in 1:ell) {
+		k[i] <- R0/N0 * khat[ell-i+1]/sum(khat) 
+	}
+	
+	for (i in 1:(ell-1)) {
+		I[i] <- 0
+		S[i] <- N0
+		phi[i] <- 0
+		pSI[i] <- 0
+	}
+	
+	I[ell] <- I0
+	S[ell] <- N0 - I0
+	
+	phi[ell] <- sum(k[1:ell] * I[1:ell])
+	pSI[ell] <- 1 - exp(-phi[ell])
+	
+	for (t in (ell+1):(tmax * nstep + ell)) {
+		I[t] ~ dbin(pSI[t-1],S[t-1])
+		S[t] <- S[t-1] - I[t]
+		phi[t] <- sum(k[1:ell] * I[(t-ell+1):t])
+		pSI[t] <- 1 - exp(-phi[t])
+	}
+
+	for (i in 1:tmax) {
+		mu[i] <- sum(I[((ell+1):(ell+nstep)) + (i-1) * nstep]) + 1e-10
+		p[i] <- r/(r + mu[i] * reporting)
+		incidence[i] ~ dnegbin(p[i], r)
+	}
+
+}

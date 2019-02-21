@@ -13,7 +13,7 @@ scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,p
 scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
 
 classify <- data.frame(
-	type=c("trajectory", "gradient", "tsir", "pomp", "renewal"),
+	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_jags"),
 	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete"),
 	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation")
 )
@@ -42,13 +42,24 @@ for (i in 0:9) {
 
 allcover_sir$pomp <- bind_rows(templist)
 
-load("../sir_fit/jags_fit.rda")
+templist <- list()
+for (i in 0:9) {
+	fn <- paste0("../sir_fit/jags_fit_", i, ".rda")
+	
+	load(fn)
+	
+	templist[[i+1]] <- fitlist %>%
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+}
 
-allcover_sir$renewal <- bind_rows(fitlist, .id="sim")
+allcover_sir$renewal_jags <- bind_rows(templist)
 
 load("../sir_fit/tsir_fit.rda")
 
 allcover_sir$tsir <- bind_rows(fitlist, .id="sim")
+
+## load TSIR fits
 
 load("../tsir_fit/tsir_trajectory_fit.rda")
 
@@ -95,12 +106,12 @@ estdata <- alldata %>%
 	ungroup %>%
 	merge(classify) %>%
 	mutate(
-		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal"),
+		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_jags"),
 					labels=c("trajectory\nmatching",
 							 "gradient\nmatching",
 							 "tSIR",
 							 "POMP",
-							 "Renewal"))
+							 "Renewal\n(JAGS)"))
 	)
 
 g1 <- ggplot(estdata) +

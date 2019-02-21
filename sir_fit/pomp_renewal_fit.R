@@ -8,9 +8,9 @@ load("../data/gillespie_data.rda")
 argvals <- commandArgs(trailingOnly=TRUE)
 batch_num <- as.numeric(argvals[1])
 
-fn <- paste0("pomp_0_1_fit_", batch_num, ".rda")
+fn <- paste0("pomp_renewal_fit_", batch_num, ".rda")
 
-globals <- Csnippet(paste0("double N0=100000;"))
+globals <- Csnippet(paste0("double N0=100000; double Gmean=1;"))
 
 nsim <- 10
 
@@ -30,9 +30,9 @@ for (i in 1:nsim) {
 	
 	pomp_model <- do.call(pomp, pomp_arg2)
 	
-	start <- c(R0=2, rho=0.7, I0=1e-4, disp=40, Gshape=1, Gscale=1)
+	start <- c(R0=2, rho=0.7, I0=1e-4, disp=10, Gvar=1)
 	
-	rwsd_arg <- list(R0=0.1, rho=0.1, I0=0.1, disp=0.1, Gshape=0.1, Gscale=0.1)
+	rwsd_arg <- list(R0=0.05, rho=0.05, I0=0.05, disp=0.05, Gvar=0.01)
 	
 	m <- mif2(
 		pomp_model,
@@ -47,18 +47,19 @@ for (i in 1:nsim) {
 		continue(Nmif=50, cooling.fraction=0.2) %>%
 		continue(Nmif=50, cooling.fraction=0.1)
 	
-	cc <- confint_pomp(m, rwsd_arg=rwsd_arg)
+	cc <- confint_pomp(m, rwsd_arg=rwsd_arg, par=1, trace=TRUE)
 	
 	cdata <- data.frame(
-		param=c("beta", "rprob", "I0", "size"),
+		param=names(start),
 		mean=coef(m),
-		lwr=c(cc$lwr, NA, NA),
-		upr=c(cc$upr, NA, NA)
+		lwr=c(cc$lwr, NA, NA, NA, NA),
+		upr=c(cc$upr, NA, NA, NA, NA)
 	)
 	
 	cdata$coverage <- c(
 		cdata$lwr[1] < 2 && 2 < cdata$upr[1],
-		cdata$lwr[2] < 0.7 && 0.7 < cdata$upr[2],
+		NA,
+		NA,
 		NA,
 		NA
 	)
