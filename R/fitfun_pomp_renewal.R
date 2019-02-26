@@ -1,4 +1,4 @@
-make_pomp_renewal <- function(ell=40, nstep=10) {
+make_pomp_renewal <- function(ell=60, nstep=10) {
 	
 	states <- paste0("I", 1:ell)
 	

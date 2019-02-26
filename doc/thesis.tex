@@ -1,5 +1,7 @@
 \documentclass{article}
 \usepackage[top=1in,left=1in, right = 1in, footskip=1in]{geometry}
+\linespread{2}
+
 
 \usepackage{amsthm}
 \usepackage{amsmath}
@@ -12,31 +14,90 @@
 
 \usepackage{graphicx}
 
-\title{Thesis}
+\title{Practical guide to fitting SIR models}
 \date{\today}
 \author{Sang Woo Park}
 
 \begin{document}
 \maketitle
 
+\pagebreak
+
+\tableofcontents
+
+\pagebreak
+
 
 \section{Introduction}
 
-Fitting models. Too many methods and too many models. What should we do?
+Over the last few decades, a plethora of computational tools have been developed to study epidemic time series.
+Central to these methods are mechanistic models.
+These models allow us to study the qualitative dynamics of a system and infer underlying mechanisms that drove the observed patterns in the data.
+For example, we now know that the complex dynamics of measles outbreaks were driven by seasonal transmission patterns \citep{earn2000simple}.
+
+%% read https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2607466/
+
+The SIR model is one of the most basic mechanistic models. It describes how individuals move from susceptible ($S$) to infected ($I$) and to recovered ($R$) states in a homogeneously mixing population:
+\begin{equation}\label{eq:sir}
+\begin{aligned}
+\frac{dS}{dt} &= b(t) - \left(\beta(t) \frac{I}{N} + \mu \right) S\\
+\frac{dI}{dt} &= \beta(t) S \frac{I}{N} - (\gamma + \mu) I\\
+\frac{dR}{dt} &= \gamma I - \mu R
+\end{aligned}
+\end{equation}
+where $b(t)$ is the natural birth rate (or recruitment rate to susceptible population), $\beta(t)$ is the transmission rate, $\gamma$ is the recovery rate, and $\mu$ is the natural death rate.
+Despite its simplicity, the SIR model is still widely used to study outbreaks, such as measles, plague, HIV, and influenza.
+The main difficulty in analyzing these systems comes from estimating transmission rate, $\beta(t)$.
+
+One way to estimate $\beta(t)$ is by matching the deterministic solution of the system \ref{eq:sir} with the observed number of cases.
+This method is referred to as trajectory matching.
+Similarly, it is possible to match \emph{gradients} of the system \ref{eq:sir} given if all state variables are observed.
+Unlike trajectory matching, gradient matching does not require parametric forms of the rates to be specified beforehand and allows for flexible modeling of the system.
+While these methods are computationally efficient and easy to implement, they do not allow us to take demographic stochasticity into account explicitly.
+
+On the other hand, Monte Carlo methods allows us to model \emph{all} sources of variation (e.g., observation error and process error) explicitly.
+
+
+
+This is not at all an exhaustive list of all existing methods.
+Generalized profiling balances bewteen trajectory matching and gradient matching by fitting a deterministic model  \citep{hooker2010parameterizing}.
+Laplace approximation based methods are also available.
+
+Of all these methods, the time series SIR (TSIR) method has been particularly successful in studying dynamics of ??? diseases, especially measles.
+
+
+
+
+There are many ways to estimate underlying parameters of the SIR model \ref{eq:sir};
+yet their differences are unclear because they all rely on different set of assumptions.
+Which one should one use?
+Here, we compare TSIR each method against simulated data and study how differences in the assumptions affect our conclusions.
+Then, we apply each method to measles time series from Boston and discuss implications.
+
+\pagebreak
+
+\section{Simulated data}
+
+\pagebreak
+
+
+\section{Fitting methods}
+
+\subsection{TSIR}
+
+$\beta I^\alpha/N$ approximates $1 - \exp(-\beta I/N)$.
+Hence, we can find $\hat\beta$ such that 
+$$
+\beta \bar{I}^\alpha/N = 1 - \exp(-\hat\beta \bar{I}/N)
+$$
+and use it as an estimate of $\mathcal R$.
+
+
 
 \section{SIR model}
 
 The susceptible-infected-recovered (SIR) model is one of the simplest epidemic models which describe how disease spreads in a homogeneously mixing population.
-In general, the SIR model can be written as 
-\begin{equation}
-\begin{aligned}
-\frac{dS}{dt} &= b(t) - (\phi(t) + \mu) S\\
-\frac{dI}{dt} &= \phi(t) S - (\gamma + \mu) I\\
-\frac{dR}{dt} &= \gamma I - \mu R
-\end{aligned}
-\label{eq:sir}
-\end{equation}
-where $S$, $I$, and $R$ describe the number of susceptible, infected, and recovered individuals.
+
 $b(t)$ represents recruitment rate to the susceptible population, $\mu$ represents natural mortality rate, and $\gamma$ represents per-capita recovery rate.
 $\phi(t)$ represents force of infection, which is defined as the rate at which a susceptible individual acquires infection.
 We write $\phi(t) = \beta(t) I/N$ to represent \textit{frequency}-dependent action or $\phi(t) = \beta I$ to represent \textit{density}-dependent action, where $N = S + I + R$ is the total population size.

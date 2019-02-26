@@ -1,5 +1,5 @@
 renewal <- function(R0 = 2, Gmean=1, Gvar=1,
-					ell=40, nstep=10,
+					ell=60, nstep=10,
 					reporting=0.7,
 					r=10,
 					N0=1e5,

@@ -13,7 +13,7 @@ scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,p
 scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
 
 classify <- data.frame(
-	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_jags"),
+	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
 	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete"),
 	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation")
 )
@@ -44,7 +44,7 @@ allcover_sir$pomp <- bind_rows(templist)
 
 templist <- list()
 for (i in 0:9) {
-	fn <- paste0("../sir_fit/jags_fit_", i, ".rda")
+	fn <- paste0("../sir_fit/pomp_renewal_fit_", i, ".rda")
 	
 	load(fn)
 	
@@ -53,7 +53,7 @@ for (i in 0:9) {
 		mutate(sim=as.character(as.numeric(sim)+i*10))
 }
 
-allcover_sir$renewal_jags <- bind_rows(templist)
+allcover_sir$renewal_pomp <- bind_rows(templist)
 
 load("../sir_fit/tsir_fit.rda")
 
@@ -86,6 +86,19 @@ load("../tsir_fit/tsir_tsir_fit.rda")
 
 allcover_tsir$tsir <- bind_rows(fitlist, .id="sim")
 
+templist <- list()
+for (i in 0:9) {
+	fn <- paste0("../tsir_fit/tsir_pomp_renewal_fit_", i, ".rda")
+	
+	load(fn)
+	
+	templist[[i+1]] <- fitlist %>%
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+}
+
+allcover_tsir$renewal_pomp <- bind_rows(templist)
+
 alldata_sir <- bind_rows(allcover_sir, .id="type") %>%
 	mutate(sim="gillespie")
 alldata_tsir <- bind_rows(allcover_tsir, .id="type") %>%
@@ -99,19 +112,19 @@ estdata <- alldata %>%
 	group_by(param, type, sim) %>%
 	mutate(error=log(mean/2)) %>%
 	summarize(
-		bias=mean(error),
-		RMSE=sqrt(mean(error^2)),
-		coverage=mean(coverage)
+		bias=mean(error, na.rm=TRUE),
+		RMSE=sqrt(mean(error^2, na.rm=TRUE)),
+		coverage=mean(coverage, na.rm=TRUE)
 	) %>%
 	ungroup %>%
 	merge(classify) %>%
 	mutate(
-		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_jags"),
+		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
 					labels=c("trajectory\nmatching",
 							 "gradient\nmatching",
 							 "tSIR",
 							 "POMP",
-							 "Renewal\n(JAGS)"))
+							 "Renewal"))
 	)
 
 g1 <- ggplot(estdata) +

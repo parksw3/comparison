@@ -1,5 +1,15 @@
+library(Deriv)
+
 load("../sim/gillespie_sim.rda")
 load("../data/gillespie_data.rda")
+
+fixfun <- function(beta, alpha, N, I) {
+	mI <- mean(I)
+	
+	-log(1 - beta * mI^alpha/N) * N/mI
+}
+
+fixfun_deriv <- Deriv(fixfun, c("beta", "alpha"))
 
 N <- 1e5
 nsim <- length(datalist)
@@ -19,11 +29,17 @@ for (i in 1:nsim) {
 	
 	lfit <- lm(log(Inew) ~ 1 + log(Iprev) + offset(log(S/N)))
 
+	hatbeta <- fixfun(exp(coef(lfit))[[1]], coef(lfit)[[2]], N, I)
+	
+	dl <- fixfun_deriv(exp(coef(lfit))[[1]], coef(lfit)[[2]], N, I) 
+	
+	hatbeta_sd <- sqrt(t(dl) %*% vcov(lfit) %*% dl)[[1]]
+	
 	cdata <- data.frame(
 		param=c("beta", "alpha"),
-		mean=c(exp(coef(lfit)[[1]]), coef(lfit)[[2]]),
-		lwr=c(exp(confint(lfit)[1,1]), confint(lfit)[2,1]),
-		upr=c(exp(confint(lfit)[1,2]), confint(lfit)[2,2])
+		mean=c(hatbeta, coef(lfit)[[2]]),
+		lwr=c(hatbeta - 1.96 * hatbeta_sd, confint(lfit)[2,1]),
+		upr=c(hatbeta + 1.96 * hatbeta_sd, confint(lfit)[2,2])
 	)
 	
 	cdata$coverage <- c(
