@@ -4,11 +4,6 @@ library(ggplot2); theme_set(theme_bw())
 allcover <- list()
 alltrans <- list()
 
-load("../sinusoidal_fit/sinusoidal_tsir_fit_default.rda")
-
-allcover$tsir_default <- bind_rows(fitlist, .id="sim")
-alltrans$tsir_default <- bind_rows(translist, .id="sim")
-
 load("../sinusoidal_fit/sinusoidal_tsir_fit_cyclic.rda")
 
 allcover$tsir_cyclic <- bind_rows(fitlist, .id="sim")

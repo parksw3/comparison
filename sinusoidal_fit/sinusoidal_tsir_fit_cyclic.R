@@ -1,5 +1,14 @@
+library(Deriv)
 library(mgcv)
 load("../data/gillespie_sinusoidal_data.rda")
+
+fixfun <- function(beta, alpha, N, I) {
+	mI <- mean(I)
+	
+	-log(1 - beta * mI^alpha/N) * N/mI
+}
+
+fixfun_deriv <- Deriv(fixfun, c("beta", "alpha"))
 
 N <- 5e6
 nsim <- length(datalist)
@@ -75,7 +84,7 @@ for (i in 1:nsim) {
 	fitlist[[i]] <- cdata
 	translist[[i]] <- data.frame(
 		time=seq(1, 26, by=0.01),
-		beta=exp(predict(lfit, newdata=data.frame(biweek=seq(1, 26, by=0.01), logIprev=0, offterm=0)))
+		beta=fixfun(exp(predict(lfit, newdata=data.frame(biweek=seq(1, 26, by=0.01), logIprev=0, offterm=0))), coef(lfit)[[2]], N, I)
 	)
 }
 

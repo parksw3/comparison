@@ -64,7 +64,7 @@ parnames(objfun) <- c("log.beta", "log.gamma", "logit.rprob", "logit.I0", "log.s
 
 yini <- c(S=1e5-10, I=10, R=0)
 pars <- c(beta=2, gamma=1, N=1e5)
-tvec <- 0:20
+tvec <- 0:40
 
 out <- as.data.frame(ode(yini, tvec, gfun, pars))
 

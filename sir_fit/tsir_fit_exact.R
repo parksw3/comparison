@@ -21,12 +21,17 @@ for (i in 1:nsim) {
 	dd <- datalist[[i]][1:20,]
 	rr <- reslist[[i]]
 	
-	I <- dd$incidence/0.7
+	ii <- c(rr$incidence[1], diff(rr$incidence))
+	tt <- rr$time
+	
+	dd <- as.data.frame(table(ceiling(tt[ii==1])))
+	
+	I <- dd$Freq[1:20]
+	
 	Inew <- tail(I, -1)
 	Iprev <- head(I, -1)
 	
-	## assume that we know S exactly
-	S <- approx(x=rr$time, y=N-rr$incidence-10, xout=1:19)$y
+	S <- head(N - cumsum(I) - 10, -1)
 	
 	lfit <- lm(log(Inew) ~ 1 + log(Iprev) + offset(log(S/N)))
 	
@@ -51,4 +56,4 @@ for (i in 1:nsim) {
 	fitlist[[i]] <- cdata
 }
 
-save("fitlist", file="tsir_fit.rda")
+save("fitlist", file="tsir_fit_exact.rda")
