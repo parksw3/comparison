@@ -1,16 +1,8 @@
 library(Deriv)
+source("../R/tsir_util.R")
 
 load("../sim/gillespie_sim.rda")
 load("../data/gillespie_data.rda")
-
-fixfun <- function(logbeta, alpha, N, I) {
-	mI <- mean(I)
-	beta <- exp(logbeta)
-	
-	-log(1 - beta * mI^alpha/N) * N/mI
-}
-
-fixfun_deriv <- Deriv(fixfun, c("logbeta", "alpha"))
 
 N <- 1e5
 nsim <- length(datalist)
@@ -18,6 +10,7 @@ nsim <- length(datalist)
 fitlist <- vector('list', nsim)
 
 for (i in 1:nsim) {
+	print(i)
 	dd <- datalist[[i]][1:20,]
 	rr <- reslist[[i]]
 	
@@ -25,22 +18,31 @@ for (i in 1:nsim) {
 	Inew <- tail(I, -1)
 	Iprev <- head(I, -1)
 	
+	ii <- c(rr$incidence[1], diff(rr$incidence))
+	tt <- rr$time
+	
+	dd2 <- as.data.frame(table(ceiling(tt[ii==1])))
+	
+	I2 <- dd2$Freq[1:20]
+	
 	## assume that we know S exactly
-	S <- approx(x=rr$time, y=N-rr$incidence-10, xout=1:19)$y
+	S <- head(N - cumsum(I2) - 10, -1)
 	
 	lfit <- lm(log(Inew) ~ 1 + log(Iprev) + offset(log(S/N)))
 	
 	hatbeta <- fixfun(coef(lfit)[[1]], coef(lfit)[[2]], N, I)
 	
-	dl <- fixfun_deriv(coef(lfit)[[1]], coef(lfit)[[2]], N, I) 
+	pp <- profile_likelihood(betavec=seq(1.5, 3, by=0.05), N=N, S=S, I=I)
+	pp$nll <- pp$nll + logLik(lfit)
+	pp$nll[pp$beta < hatbeta] <- - pp$nll[pp$beta < hatbeta]
 	
-	hatbeta_sd <- sqrt(t(dl) %*% vcov(lfit) %*% dl)[[1]]
+	ci <- sort(approx(x=pp$nll, y=pp$beta, xout=c(-qchisq(0.95, 1)/2, qchisq(0.95, 1)/2))$y)
 	
 	cdata <- data.frame(
 		param=c("beta", "alpha"),
 		mean=c(hatbeta, coef(lfit)[[2]]),
-		lwr=c(hatbeta - 1.96 * hatbeta_sd, confint(lfit)[2,1]),
-		upr=c(hatbeta + 1.96 * hatbeta_sd, confint(lfit)[2,2])
+		lwr=c(ci[1], confint(lfit)[2,1]),
+		upr=c(ci[2], confint(lfit)[2,2])
 	)
 	
 	cdata$coverage <- c(
