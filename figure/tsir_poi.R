@@ -48,7 +48,9 @@ for (i in 1:nsim) {
 ff <- fitlist %>% 
 	bind_rows(.id="sim")
 
-lm(log(Inew) ~ log(incidence) + offset(log(S)), data=ff)
+lfit <- glm(log(Inew) ~ log(incidence) + offset(log(S)), data=ff)
+
+plot(lfit, 2)
 
 g1 <- ggplot(ff) +
 	geom_point(aes(prevalence, incidence), shape=".") +

@@ -155,17 +155,66 @@ equation ?? models step-ahead prediction as a function of previous state and pro
 Coupled with a deterministic susceptible reconstruction and estimation of reporting rate, the TSIR method attributes all errors to one-step process noise and oversmooths the likelihood surface (figure ?).
 Several studies have associated dynamics of the deterministic model (equation ??) with the inferred parameters from the regression but they are intrinsically different models.
 
-\subsection{Nonlinear infection term}
+\subsection{Probability of infection}
 
+The TSIR model assumes that probability of infection is a nonlinear function of prevalence: $\beta I^\alpha/N$.
+This contrasts with the linear assumption of the Euler approximation ($\beta I/N$) or the exponenital assumption of the hazard-based approximation ($1 - \exp(- \beta I/N)$).
+Inclusion of the parameter $\alpha$ has been previously attributed to heterogeneity in the population or changes from continuous to discrete time model.
+However, there is still a room for clearer understanding of the actual role of the parameter $\alpha$:
+for example, a few studies recognize that the estimated $\alpha$ does not always correspond to the best predictive $\alpha$ and resorted to assuming $\alpha = 0.97$.
 
-$\beta I^\alpha/N$ approximates $1 - \exp(-\beta I/N)$.
-Hence, we can find $\hat\beta$ such that 
-$$
-\beta \bar{I}^\alpha/N = 1 - \exp(-\hat\beta \bar{I}/N)
-$$
-and use it as an estimate of $\mathcal R$.
+Glass et al derived an analytical expression for optimal values of $\alpha$ by comparing the changes in the infected population at equilibrium using a second order Taylor expansion. 
+Based on their approximation, optimal value of $\alpha$ equals 1 when there is no birth term.
+Instead, when we rewrite the TSIR model as 
+\begin{equation}
+\log \left(\frac{I_{t+1}}{S_t}\right) = \log\left(\frac{\beta I_t^\alpha}{N_t}\right) + \epsilon_t.
+\end{equation}
+it becomes much clearer that the TSIR model is trying to match the log probability of infection (when an epidemic is ongoing, changes in the susceptible population $S_t$ through natural birth or death is negeligible over a generation, and $I_{t+1}/S_t$ can be interpreted as the probability of infection over a generation). 
+Then, we almost always expect $\alpha$ to be less than one because we expect the probability of infection (i.e., probability of finding a new host) to experience density dependence.
+
+Though the difference in the interpretation of $\alpha$ is subtle, this perspective allows us to derive a useful connection between the discrete-time model and the continuous-time model.
+A naive estimate of basic reproductive number from the TSIR model is $\beta$.
+However, as discussed earlier, we often prefer to use hazard-based approach to approximate the continuous-time model. 
+Then, we can find $\hat \beta$ such that $1 - \exp(-\hat\beta I/N)$ matches $\beta I^\alpha/N$ and use $\hat \beta$ as our estimate of the basic reproductive number instead.
+A simple way to match two functions is to match their values at the mean observed incidence.
+This corrections reduces bias in the estimate of the reproductive number by a large amount.
 
 \subsection{Susceptible reconstruction}
+
+One of the main assumptions behind the TSIR model is that the dynamics susceptible population $S_t$ must be known.
+Assuming that all newborn infants become infected eventually, it is possible to recover the reporting rate, $\rho_t$, as well as the dynamics of the susceptible population as a deviation from its mean, $Z_t = S_t - \bar{S}$, by fitting a regression model to between cumulative births and cumulative cases: 
+\begin{equation}
+\sum_{t=1}^N B_t = \sum_{t=1}^N \frac{C_{t+1}}{\rho_{t+1}} + Z_{t+1} - Z_1,
+\end{equation}
+where $C_t$ is the number of observed cases. 
+Then, the mean susceptible population $\bar S$ can be estimated using profile likelihood with the TSIR regression.
+
+While this method of reconstructing the susceptible dynamics has been successfully used with the TSIR method, 
+several questions remain to be answered.
+First, how sensitive is our inference to regression methods?
+Second, does $Z_t$ represent deviation from the overall population mean $\bar{S}$ or from some sort of moving average (assuming that population changes over time)?
+Likewise, how does changes in population size or reporting rate over time affect our estimate of $\rho_{t+1}$ or $Z_t$?
+Finally, how do assumptions about the population size affect estimate of the transmission rate?
+
+\begin{figure}
+\includegraphics[width=\textwidth]{../figure/susceptible_reconstruction_tsir.pdf}
+\caption{
+\swp{TODO}
+}
+\label{fig:tsirrecon}
+\end{figure}
+
+First, we simulate an epidemic using the continuous deterministic SIR model for 10 years and introduce 70\% reporting rate.
+Then, we use 5 different regression models available from the \texttt{tsiR} package and test their ability to infer reporting rate and susceptible dynamics (\fref{transmission}).
+We find that estimates of transmission rates are highly sensitive to regression methods.
+All nonlinear regression methods, especially guassian regression, yield inaccurate estimates near the beginning and the end of a time series.
+Both linear and spline regressions provide reasonably accurate estimates.
+In general, estimates of susceptible dynamics appear to be robust regardless of the regression method.
+
+
+
+\subsection{Splines}
+
 
 
 \pagebreak
