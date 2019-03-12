@@ -179,6 +179,11 @@ Then, we can find $\hat \beta$ such that $1 - \exp(-\hat\beta I/N)$ matches $\be
 A simple way to match two functions is to match their values at the mean observed incidence.
 This corrections reduces bias in the estimate of the reproductive number by a large amount.
 
+\subsection{Process model}
+
+The TSIR model is often associated with three different process models: deterministic ($I_{t+1} = \beta_t S_t I_t^\alpha/N$), poisson ($I_{t+1} \sim \mathrm{Poisson}(\beta_t S_t I_t^\alpha/N)$), and negative binomial ($I_{t+1} \sim \mathrm{NB}(\beta_t S_t I_t^\alpha/N, I_t)$).
+
+
 \subsection{Susceptible reconstruction}
 
 One of the main assumptions behind the TSIR model is that the dynamics susceptible population $S_t$ must be known.
@@ -204,17 +209,26 @@ Finally, how do assumptions about the population size affect estimate of the tra
 \label{fig:tsirrecon}
 \end{figure}
 
-First, we simulate an epidemic using the continuous deterministic SIR model for 10 years and introduce 70\% reporting rate.
-Then, we use 5 different regression models available from the \texttt{tsiR} package and test their ability to infer reporting rate and susceptible dynamics (\fref{transmission}).
+We first simulate an epidemic using the continuous deterministic SIR model for 10 years and apply 5 different regression models available from the \texttt{tsiR} package to test their ability to infer reporting rate and susceptible dynamics (\fref{transmission}).
 We find that estimates of transmission rates are highly sensitive to regression methods.
-All nonlinear regression methods, especially guassian regression, yield inaccurate estimates near the beginning and the end of a time series.
-Both linear and spline regressions provide reasonably accurate estimates.
+The gaussian regression is particularly inaccurate in boundaries.
+Other methods provide similar estimates.
 In general, estimates of susceptible dynamics appear to be robust regardless of the regression method.
 
+\begin{figure}
+\includegraphics[width=\textwidth]{../figure/susceptible_reconstruction_compare.pdf}
+\caption{
+\swp{TODO}
+}
+\label{fig:tsircomp}
+\end{figure}
 
+Then, we compare estimates of susceptible dynamics and reporting rate under different scenarios (\fref{tsircomp}).
+We allow for population size to stay constant or increase over time and also allow for reporting rate to stay constant or increase over time; these combinations yields 4 different scenarios.
+We find that estimating time-varying reporting rate is difficult.
+We also find that $Z_t$ estimated form regression better matches $S_t - \bar{S}$ rather than $S_t - \sigma N$, i.e., any long term dynamics in the susceptible population is captured in $Z_t$.
 
 \subsection{Splines}
-
 
 
 \pagebreak
