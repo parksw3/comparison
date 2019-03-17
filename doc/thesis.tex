@@ -1,6 +1,5 @@
 \documentclass{article}
-\usepackage[top=1in,left=1in, right = 1in, footskip=1in]{geometry}
-\linespread{2}
+
 
 \usepackage{amsthm}
 \usepackage{amsmath}
@@ -22,7 +21,7 @@
 
 \usepackage{graphicx}
 
-\title{Practical guide to fitting SIR models}
+\title{Practical guide to fitting an SIR model}
 \date{\today}
 \author{Sang Woo Park}
 
@@ -38,14 +37,14 @@
 
 \section{Introduction}
 
-Over the last few decades, a plethora of computational tools have been developed to study epidemic time series.
+Over the last few decades, a plethora of computational tools has been developed to study epidemic time series.
 Central to these methods are mechanistic models.
 These models allow us to study the qualitative dynamics of a system and infer underlying mechanisms that drove the observed patterns in the data.
-For example, we now know that the complex dynamics of measles outbreaks were driven by seasonal transmission patterns \citep{earn2000simple}.
+For example, we now know that the complex dynamics of measles outbreaks are driven by seasonal transmission patterns \citep{earn2000simple}.
 
 %% read https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2607466/
-
-The SIR model is one of the most basic mechanistic models. It describes how individuals move from susceptible ($S$) to infected ($I$) and to recovered ($R$) states in a homogeneously mixing population:
+The Susceptible-Infected-Recovered (SIR) model is one of the most basic mechanistic models. 
+It describes how individuals move from susceptible ($S$) to infected ($I$) and to recovered ($R$) states in a homogeneously mixing population:
 \begin{equation}\label{eq:sir}
 \begin{aligned}
 \frac{dS}{dt} &= b(t) - \left(\beta(t) \frac{I}{N} + \mu \right) S\\
@@ -54,25 +53,27 @@ The SIR model is one of the most basic mechanistic models. It describes how indi
 \end{aligned}
 \end{equation}
 where $b(t)$ is the natural birth rate (or recruitment rate to susceptible population), $\beta(t)$ is the transmission rate, $\gamma$ is the recovery rate, and $\mu$ is the natural death rate.
-Despite its simplicity, the SIR model is still widely used to study outbreaks, such as measles, plague, HIV, and influenza.
+Despite its simplicity, the SIR model can be applied to studying a wide range of diseases, such as measles, plague, HIV, and influenza.
 The main difficulty in analyzing these systems comes from estimating transmission rate, $\beta(t)$.
 
-One way to estimate $\beta(t)$ is by matching the deterministic solution of the system \eref{sir} with the observed number of cases by minimizing sum of squares difference or negative log-likelihood.
+One way to estimate the transmission rate $\beta(t)$ is by matching the deterministic solution of the system \eref{sir} with the observed data by minimizing their distance, measured by sum of squares difference or negative log-likelihood.
 This method is referred to as trajectory matching.
-Similarly, it is possible to match gradients of the system \eref{sir} given if all state variables are observed.
-Unlike trajectory matching, gradient matching does not require parametric forms of the rates to be specified beforehand and allows for flexible modeling of the system.
+Similarly, it is possible to match gradients of the system \eref{sir}, where the gradients of the observed time series can be obtained by approximating the data with a smooth curve, such as piecewise polynomials, to the data and taking its derivative \citep{ellner2002fitting}.
 While these methods are computationally efficient and easy to implement, they do not allow us to take demographic stochasticity into account explicitly.
 
 On the other hand, Monte Carlo methods allow us to model \emph{all} sources of variation (e.g., observation error and process error) explicitly.
-Sequential Monte Carlo methods (e.g., particle filtering)
-
+For example, Sequential Monte Carlo methods, also known as particle filtering, provides a way of approximating the likelihood through a series of simulations (particles) as long as there is a process model and an observation model.
+Approximate likelihood can be maximized by iterated filtering \citep{ionides2011iterated, ionides2015inference} or can be incorporated into a Bayesian scheme using partiler Monte Carlo Markov Chain (MCMC).
+Likewise, Bayesian Monte Carlo methods based on renewal equations are able to integrates over state space.
+These methods are computationally expensive and require discretization of the system, which may be undesirable.
 
 This is not at all an exhaustive list of all existing methods.
 Generalized profiling balances bewteen trajectory matching and gradient matching by fitting a deterministic model  \citep{hooker2010parameterizing}.
+
 Laplace approximation based methods are also available.
 
-Of all these methods, the time series SIR (TSIR) method has been particularly successful in studying dynamics of ??? diseases, especially measles.
 
+Of all these methods, the time series SIR (TSIR) method has been particularly successful in studying dynamics of ??? diseases, especially measles.
 
 
 
@@ -82,50 +83,58 @@ Which one should one use?
 Here, we compare TSIR each method against simulated data and study how differences in the assumptions affect our conclusions.
 Then, we apply each method to measles time series from Boston and discuss implications.
 
-\pagebreak
-
 \section{Data}
 
+In order to estimate the parameters of the SIR model, it is important to know what kinds of data are available.
 Epidemic time series can be classified into three categories: incidence, mortality, and prevalence.
-Incidence in defined as the number of newly infected individuals generated between two reporting periods.
-Then, true incidence of the SIR model \eref{sir} between time $t$ and $t-\tsub{t}{rep}$, where $\tsub{t}{rep}$ is the length of reporting step, can be obtained by integrating total infection rate:
+Incidence is defined as the number of newly infected individuals generated over a reporting period.
+Then, true incidence of the SIR model \eref{sir} between time $t$ and $t-\tsub{t}{rep}$, where $\tsub{t}{rep}$ is the length of reporting time step, can be obtained by integrating total infection rate over the reporting period:
 \begin{equation}
 \int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds.
 \end{equation}
-Similarly, mortality case, which is defined as the number of individuals that died between two periods, can be obtained by integrating total death rate:
+Similarly, mortality case, which is defined as the number of individuals that died during a reporting period, can be obtained by integrating total death rate  over the reporting period:
 \begin{equation}
 \int_{t-\tsub{t}{rep}}^{t} \gamma I ds.
 \end{equation}
-Finally, prevalence is defined as the number of infected individuals in the population and corresponds to the state variable $I$.
-Number of reported incidence, mortality, and prevalence can be drawn from a binomial distribution with reporting rate $\rho$ and their corresponding true values given above.
+Finally, prevalence is defined as the number of infected individuals that are present in the population and corresponds to the state variable $I$.
+Reported incidence, mortality, and prevalence cases can be drawn from a binomial (or beta-binomial) distribution with reporting rate $\rho$.
 
 When reporting period is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
 Indeed, for the simple SIR model \eref{sir}, it can be shown that incidence, prevalence, and mortality are similar to each other under Euler approximation when reporting period is equal to mean generation time (see Appendix).
-However, this is not necessarily true for more complicated models. 
+Their deterministic dynamics are sufficiently similar that we expect these three reports to be nearly indistinguishable from each other when demographic stochasticity and observation error is introduced.
+However, this is not necessarily true for more complicated models.
 For a more realistic model with exposed period (SEIR model), incidence is similar to prevalence when reporting period is equal to mean \emph{generation time} whereas mortality is similar to prevalence when reporting period is equal to mean \emph{infectious period}. \swp{TODO: confirm}
 
-
-\begin{figure}[t]
+\begin{figure}[!ht]
 \includegraphics[width=\textwidth]{../figure/compare_profile_likelihood.pdf}
 \caption{
-\swp{TODO}
+\textbf{Comparison of incidence, prevalence, and mortality from dynamical and estimation perspective.}
+A: dynamics of incidence, mortality and prevalence of the SIR model for a single outbreak (no natural birth/death and fixed transmission rate) when mean generation time ie equal to reporting period.
+The parameters and initial conditions are $\beta = 2$, $\gamma = 1$, $N = 1 \times 10^5$, $I(0) = 10$, and $S(0) = N - 10$.
+B: dynamics of incidence, mortality and prevalence of the SIR model with sinusoidal transmission rate ($\beta(t) = b_0 (1 + b_1 \cos (2 \pi t/26))$) when mean generation time ie equal to reporting period.
+The parameters and initial conditions are $b_0 = 500/26$, $b_1 = 0.15$, $\gamma = 1$, $\mu = 1/(50 \times 26)$, $N = 5 \times 10^6$, $I(0) = 0.0001 N$, $S(0) = 0.05 N$.
+C, D, E: deviance difference (profile likelihood minus the maximum likelihood) of each parameters when incidence, mortality, and prevalence are fit to same time series using trajectory matching. 
+Grey dashed line represents the true value.
 } 
 \label{fig:incidence}
 \end{figure}
 
-Even if incidence, mortality, and prevalence \emph{data} are expected to be similar to each other when reporting period is equal to mean generation time, it is important to distinguish them when we are estimating underlying parameters of the SIR model, especially when mean generation time $1/\gamma$ is not exactly known.
-To demonstrate this idea, we take a simulated epidemic time series and try to estimate transmission rate $\beta$, recovery rate $\gamma$, reporting rate $\rho$, and initial number of infected individuals $I(0)$ by sequentially treating the same time series as incidence, mortality, and prevalence report (\fref{incidence}).
-We find that fitting prevalence and mortality yields almost identical estimates of the transmission rate $\beta$ and the recovery rate $\gamma$ whereas fitting incidence and mortality yields consistent estimates of the reporting rate $\rho$.
+Even if incidence, mortality, and prevalence are expected to be exhibit similar dynamics other when reporting period is equal to mean generation time, it is important to distinguish them when we are estimating underlying parameters of the SIR model, especially when mean generation time $1/\gamma$ is not exactly known.
+To demonstrate this idea, we first simulate an epidemic time series representing prevalence over time by solving the SIR model numerically and calculating prevalence, $I(t)$, for 20 reporting periods, where reporting period is equal to the mean generation time. Then, we draw a beta-binomial random variable at each time step with a reporting rate of 70\% and an overdispersion parameter of 10.
+Using this time series, we try to estimate four parameters -- transmission rate $\beta$, recovery rate $\gamma$, reporting rate $\rho$, and an initial number of infected individuals $I(0)$ -- by treating the same time series as if it were incidence, mortality, and prevalence report (\fref{incidence}).
 
-There is a simple explanation for these observations. 
+We find that fitting prevalence and mortality curves to the same time series yields almost identical estimates of the transmission rate $\beta$ and the recovery rate $\gamma$ (as well as related uncertainty in the estimates) whereas fitting incidence and mortality curves to the same time series yields consistent estimates of the reporting rate $\rho$  (as well as related uncertainty in the estimates).
 As mortality is approximately a lagged reflection of prevalence regardless of reporting period (reported mortality case at time $t$ is approximately equal to $\rho \gamma I(t-\tsub{t}{rep}) \tsub{t}{rep}$), 
 it is possible to generate a mortality curve that matches its corresponding prevalence curve by adjusting the reporting rate $\rho$.
-Incidence report no longer  prevalence when reporting period is not equal to the mean generation time (i.e., when $\gamma$ is being estimated); therefore, fitting incidence curve yields a different estimate of the dynamical parameters, $\beta$ and $\gamma$, from fitting mortality or prevalence curves.
-On the other hand, fitting incidence and mortality curve yields similar estimates of the reporting rate $\rho$ because they both contain equivalent information about the final size of an epidemic: total \emph{true} incidence and total \emph{true} mortality is equal to the final size of an epidemic.
+This explains why estimates of dynamical parameters, $\beta$ and $\gamma$, are similar whether we treat the same time series as prevalence or mortality.
+On the other ahnd, incidence report no longer matches prevalence report when reporting period is not equal to the mean generation time (i.e., when $\gamma$ is being estimated); therefore, fitting incidence curve yields a different estimate of the dynamical parameters, $\beta$ and $\gamma$, from fitting mortality or prevalence curves.
+Fitting incidence and mortality curve yields similar estimates of the reporting rate $\rho$ because they both contain equivalent information about the final size of an epidemic: total \emph{true} incidence and total \emph{true} mortality is equal to the final size of an epidemic.
 
-\swp{Add transition...}
+Even when mean generation time is exactly known, we find that estimates of transmission rate $\beta$ and reporting rate $\rho$ depends on our assumptions about the data.
+We find that fitting mortality and prevalence yields consistent estimates of both $\beta$ and $\rho$ in this case, whereas fitting incidence yields similar but still different estimates.
+Treating incidence report as prevalene report (and vice versa) should be avoided.
 
-\pagebreak
+\swp{Say something more}
 
 \section{TSIR model}
 

@@ -26,6 +26,18 @@ gfun <- function(t, y, pars) {
 	})
 }
 
+gfun_sinusoidal <- function(t, y, pars) {
+	with(as.list(c(y, pars)), {
+		beta <- b0 * (1 + b1 * cos(2 * pi * t/ 26))
+		dS <- mu * (N - S) - beta * S * I/N
+		dI <- beta * S * I/N - gamma * I - mu * I
+		dR <- gamma * I - mu * R
+		dCI <- beta * S * I/N
+		dCR <- gamma * I
+		list(c(dS, dI, dR, dCI, dCR))
+	})
+}
+
 objfun <- function(param,
 				   data,
 				   N=1e5,
@@ -64,15 +76,27 @@ parnames(objfun) <- c("log.beta", "log.gamma", "logit.rprob", "logit.I0", "log.s
 
 yini <- c(S=1e5-10, I=10, R=0)
 pars <- c(beta=2, gamma=1, N=1e5)
-tvec <- 0:40
+tvec <- 0:20
+
+yini2 <- c(S=0.05*5e6, I=1e-4*5e6, R=0, CI=0, CR=0)
+pars2 <- c(mu=1/(50*26), b0=500/26, b1=0.15, gamma=1, N=5e6)
+tvec2 <- seq(0, 42, by=1)
 
 out <- as.data.frame(ode(yini, tvec, gfun, pars))
+out2 <- as.data.frame(ode(yini2, tvec2, gfun_sinusoidal, pars2))
 
 truedata <- data.frame(
 	time=1:20,
 	incidence=-diff(out$S),
 	prevalence=tail(out$I, -1),
 	mortality=diff(out$R)
+)
+
+truedata_sinusoidal <- data.frame(
+	time=1:42,
+	incidence=diff(out2$CI),
+	prevalence=tail(out2$I, -1),
+	mortality=diff(out2$CR)
 )
 
 set.seed(101)
@@ -117,7 +141,7 @@ truedata2 <- truedata %>%
 	gather(key, value, -time) %>%
 	mutate(key = sub("(.)", "\\U\\1", key, perl=TRUE))
 
-obsdata2 <- obsdata %>%
+truedata_sinusoidal2 <- truedata_sinusoidal %>%
 	gather(key, value, -time) %>%
 	mutate(key = sub("(.)", "\\U\\1", key, perl=TRUE))
 
@@ -131,8 +155,8 @@ g1 <- ggplot(truedata2) +
 		legend.position=c(0.82, 0.78)
 	)
 	
-g2 <- (g1 %+% obsdata2) +
-	scale_y_continuous("Observed cases") +
+g2 <- (g1 %+% truedata_sinusoidal2) +
+	#scale_y_continuous("Observed cases") +
 	theme(
 		legend.position="none"
 	)
