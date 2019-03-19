@@ -4,12 +4,14 @@ confint_pomp <- function(pomp_object,
 						 delta=0.01,
 						 rwsd_arg,
 						 trace=FALSE,
-						 seed=101) {
+						 seed=101,
+						 Np=1000,
+						 Nrep=10) {
 	set.seed(seed)
 	
 	cc <- coef(pomp_object)
 	
-	ll_max <- logmeanexp(replicate(10,logLik(pfilter(pomp_object,Np=1000))),se=TRUE)
+	ll_max <- logmeanexp(replicate(Nrep,logLik(pfilter(pomp_object,Np=Np))),se=TRUE)
 	
 	maxdata <- data.frame(as.list(cc), ll=ll_max[1], ll.se=ll_max[2], ldiff=0)
 	
@@ -33,7 +35,7 @@ confint_pomp <- function(pomp_object,
 				pomp_object,
 				Nmif=50,
 				start=cc2,
-				Np=1000,
+				Np=Np,
 				cooling.fraction.50=0.95,
 				rw.sd=do.call(rw.sd, rwsd_arg[-p]),
 				transform=TRUE) %>%
@@ -42,7 +44,7 @@ confint_pomp <- function(pomp_object,
 				continue(Nmif=50, cooling.fraction=0.2) %>%
 				continue(Nmif=50, cooling.fraction=0.1)
 			
-			ll_prof <- logmeanexp(replicate(10,logLik(pfilter(mprof,Np=1000))),se=TRUE)
+			ll_prof <- logmeanexp(replicate(Nrep,logLik(pfilter(mprof,Np=Np))),se=TRUE)
 			
 			ldiff <- ll_max[1] - ll_prof[1]
 			
@@ -72,7 +74,7 @@ confint_pomp <- function(pomp_object,
 				pomp_object,
 				Nmif=50,
 				start=cc2,
-				Np=1000,
+				Np=Np,
 				cooling.fraction.50=0.95,
 				rw.sd=do.call(rw.sd, rwsd_arg[-p]),
 				transform=TRUE) %>%
@@ -81,7 +83,7 @@ confint_pomp <- function(pomp_object,
 				continue(Nmif=50, cooling.fraction=0.2) %>%
 				continue(Nmif=50, cooling.fraction=0.1)
 			
-			ll_prof <- logmeanexp(replicate(10,logLik(pfilter(mprof,Np=1000))),se=TRUE)
+			ll_prof <- logmeanexp(replicate(Nrep,logLik(pfilter(mprof,Np=Np))),se=TRUE)
 			
 			ldiff <- ll_prof[1] - ll_max[1]
 			

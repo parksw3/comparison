@@ -13,9 +13,9 @@ scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,p
 scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
 
 classify <- data.frame(
-	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
-	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete"),
-	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation")
+	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp", "renewal_pomp_fix"),
+	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete", "Discrete"),
+	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation", "Simulation")
 )
 
 allcover_sir <- list()
@@ -54,6 +54,19 @@ for (i in 0:9) {
 }
 
 allcover_sir$renewal_pomp <- bind_rows(templist)
+
+templist <- list()
+for (i in 0:9) {
+	fn <- paste0("../sir_fit/pomp_renewal_fit_fix_Gvar_", i, ".rda")
+	
+	load(fn)
+	
+	templist[[i+1]] <- fitlist %>%
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+}
+
+allcover_sir$renewal_pomp_fix <- bind_rows(templist)
 
 load("../sir_fit/tsir_fit.rda")
 
@@ -119,12 +132,13 @@ estdata <- alldata %>%
 	ungroup %>%
 	merge(classify) %>%
 	mutate(
-		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
+		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp", "renewal_pomp_fix"),
 					labels=c("trajectory\nmatching",
 							 "gradient\nmatching",
 							 "tSIR",
 							 "POMP",
-							 "Renewal"))
+							 "Renewal",
+							 "Renewal\nfixed"))
 	)
 
 g1 <- ggplot(estdata) +
@@ -170,12 +184,9 @@ gcomp <- arrangeGrob(
 	arrangeGrob(nl(g1) %+% filter(estdata, sim=="gillespie"), 
 				nl(g2) %+% filter(estdata, sim=="gillespie"), 
 				nl(g3) %+% filter(estdata, sim=="gillespie"),
-				nl(g1) %+% filter(estdata, sim=="tsir") + ggtitle("tSIR simulation"), 
-				nl(g2) %+% filter(estdata, sim=="tsir"), 
-				nl(g3) %+% filter(estdata, sim=="tsir"),
-				nrow=2), 
+				nrow=1),
 	mylegend,
 	nrow=1, widths=c(10, 1)
 )
 
-ggsave("compare_estimate_sir.pdf", gcomp, width=12, height=8)
+ggsave("compare_estimate_sir.pdf", gcomp, width=12, height=4)

@@ -3,7 +3,7 @@ library(dplyr)
 library(tsiR)
 library(pomp)
 library(ggplot2); theme_set(theme_bw())
-source("../R/fitfun_pomp_tsir_lognormal.R")
+source("../R/fitfun_pomp_tsir_lognormal_process.R")
 
 rr <- read.csv("../data/measlesUKUS.csv")
 
@@ -19,9 +19,9 @@ boston <- rr %>%
 
 bs_fit <- runtsir(boston, alpha=0.975, sbar=0.035, inits.fit=TRUE)
 
-globals <- Csnippet(paste0("double I0=", bs_fit$inits[2], ";"))
+globals <- Csnippet(paste0("double S0=", bs_fit$inits[1], "; double I0=", bs_fit$inits[2], ";"))
 
-pomp_arg <- make_pomp_tsir_lognormal()
+pomp_arg <- make_pomp_tsir_lognormal_process()
 
 fitdata <- data.frame(
 	time=1:nrow(boston),
@@ -47,8 +47,7 @@ for (i in 1:length(alphavec)) {
 		B=round(boston$births),
 		N=boston$pop,
 		Beta=rep(tsir_fit$beta, 100)[1:nrow(boston)],
-		rho=1/bs_fit$rho,
-		S=0.051 * mean(rr$pop) + bs_fit$Z
+		rho=1/bs_fit$rho
 	)
 	
 	pomp_model <- do.call(pomp, append(
@@ -76,6 +75,8 @@ for (i in 1:length(alphavec)) {
 	liklist[[i]] <- fitlist %>% bind_rows
 	
 	tsirlist[[i]] <- tsir_fit
+	
+	save("liklist", "tsirlist", file="compare_likelihood_lognormal_process.rda")
 }
 
-save("liklist", "tsirlist", file="compare_likelihood_lognormal.rda")
+save("liklist", "tsirlist", file="compare_likelihood_lognormal_process.rda")

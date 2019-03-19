@@ -1,6 +1,5 @@
 \documentclass{article}
 
-
 \usepackage{amsthm}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -21,7 +20,7 @@
 
 \usepackage{graphicx}
 
-\title{Practical guide to fitting an SIR model}
+\title{A practical guide to fitting an SIR model}
 \date{\today}
 \author{Sang Woo Park}
 
@@ -34,38 +33,29 @@
 
 \pagebreak
 
-
 \section{Introduction}
 
 Over the last few decades, a plethora of computational tools has been developed to study epidemic time series.
-Central to these methods are mechanistic models.
-These models allow us to study the qualitative dynamics of a system and infer underlying mechanisms that drove the observed patterns in the data.
-For example, we now know that the complex dynamics of measles outbreaks are driven by seasonal transmission patterns \citep{earn2000simple}.
+Central to these studies are mechanistic models.
+Mechanistic modeling of a disease allow us to study the qualitative dynamics of a system and infer underlying mechanisms that drove the observed patterns in the data.
+For example, we now know that the complex dynamics of measles outbreaks are driven by seasonal transmission patterns \citep{earn2000simple, dalziel2016persistent}.
 
 %% read https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2607466/
-The Susceptible-Infected-Recovered (SIR) model is one of the most basic mechanistic models. 
-It describes how individuals move from susceptible ($S$) to infected ($I$) and to recovered ($R$) states in a homogeneously mixing population:
-\begin{equation}\label{eq:sir}
-\begin{aligned}
-\frac{dS}{dt} &= b(t) - \left(\beta(t) \frac{I}{N} + \mu \right) S\\
-\frac{dI}{dt} &= \beta(t) S \frac{I}{N} - (\gamma + \mu) I\\
-\frac{dR}{dt} &= \gamma I - \mu R
-\end{aligned}
-\end{equation}
-where $b(t)$ is the natural birth rate (or recruitment rate to susceptible population), $\beta(t)$ is the transmission rate, $\gamma$ is the recovery rate, and $\mu$ is the natural death rate.
-Despite its simplicity, the SIR model can be applied to studying a wide range of diseases, such as measles, plague, HIV, and influenza.
-The main difficulty in analyzing these systems comes from estimating transmission rate, $\beta(t)$.
+Major challenges in mechanistic modeling of disease dynamics come from developing the actual model and parameterizing the model.
+One must make different sets of assumptions (e.g., discretization of a continuous-time system) depending on the system as well as their statistical model.
+Fortunately, the Susceptible-Infected-Recovered (SIR) model, one of the most basic epidemic models, is able to describe the measles dynamics sufficiently well.
+Focusing on a simple, well-understood model allows us to compare statistical methods in their ability to infer underlying parameters without making significant changes to the model.
+Here, we focus on the time-varying transmission rate of measles.
 
-One way to estimate the transmission rate $\beta(t)$ is by matching the deterministic solution of the system \eref{sir} with the observed data by minimizing their distance, measured by sum of squares difference or negative log-likelihood.
-This method is referred to as trajectory matching.
-Similarly, it is possible to match gradients of the system \eref{sir}, where the gradients of the observed time series can be obtained by approximating the data with a smooth curve, such as piecewise polynomials, to the data and taking its derivative \citep{ellner2002fitting}.
-While these methods are computationally efficient and easy to implement, they do not allow us to take demographic stochasticity into account explicitly.
+One way to estimate the transmission rate $\beta(t)$ is by matching the deterministic solution of the system \eref{sir} with the observed data by minimizing their ``distance'', often measured by sum of squares difference or negative log-likelihood \citep{riley2003transmission, chowell2004basic}.
+This method of fitting a deterministic model, often referred to as trajectory matching, assumes that \emph{all} variation in data can be explained by observation error alone \citep{bolker2008ecological}.
+Similarly, it is possible to match gradients of the system \eref{sir}, where the gradients of the observed time series can be estimated by approximating the time series with a smooth curve, such as piecewise polynomials, and taking its derivative \citep{ellner2002fitting}.
+The main advantage of these methods is that they are computationally efficient and easy to implement.
 
-On the other hand, Monte Carlo methods allow us to model \emph{all} sources of variation (e.g., observation error and process error) explicitly.
-For example, Sequential Monte Carlo methods, also known as particle filtering, provides a way of approximating the likelihood through a series of simulations (particles) as long as there is a process model and an observation model.
-Approximate likelihood can be maximized by iterated filtering \citep{ionides2011iterated, ionides2015inference} or can be incorporated into a Bayesian scheme using partiler Monte Carlo Markov Chain (MCMC).
-Likewise, Bayesian Monte Carlo methods based on renewal equations are able to integrates over state space.
-These methods are computationally expensive and require discretization of the system, which may be undesirable.
+On the other hand, Monte Carlo methods allow us to model \emph{all} sources of variation (e.g., observation error, process error, and environmental stochasticity) explicitly.
+In particular, Sequential Monte Carlo methods (i.e., particle filtering), popularized by \cite{king2015statistical}, provides a powerful technique for testing hypotheses and inferring underlying parameters due to its ability to approximate the likelihood through a series of simulations.
+Approximate likelihood obtained by particle filtering can be maximized by iterated filtering \citep{ionides2011iterated, ionides2015inference} or can be incorporated into a Bayesian scheme using a particle Monte Carlo Markov Chain (MCMC).
+\swp{Something about Bayesian Monte Carlo methods}
 
 This is not at all an exhaustive list of all existing methods.
 Generalized profiling balances bewteen trajectory matching and gradient matching by fitting a deterministic model  \citep{hooker2010parameterizing}.
@@ -73,8 +63,9 @@ Generalized profiling balances bewteen trajectory matching and gradient matching
 Laplace approximation based methods are also available.
 
 
-Of all these methods, the time series SIR (TSIR) method has been particularly successful in studying dynamics of ??? diseases, especially measles.
+Of all these methods, the time series SIR (TSIR) method serves a special place.
 
+has been particularly successful in studying dynamics of ??? diseases, especially measles.
 
 
 There are many ways to estimate underlying parameters of the SIR model \eref{sir};
@@ -83,21 +74,77 @@ Which one should one use?
 Here, we compare TSIR each method against simulated data and study how differences in the assumptions affect our conclusions.
 Then, we apply each method to measles time series from Boston and discuss implications.
 
-\section{Data}
+\section{Methods}
+
+\subsection{SIR model}
+
+The Susceptible-Infected-Recovered (SIR) model is one of the most basic models in mathematical epidemiology.
+It describe how disease spreads in a homogeneously mixing population.
+Here, we present the model as a set of ordinary differential equations, but gillespie algorithm can be used to introduce demographic stochasticity \citep{gillespie1976general}:
+\begin{equation}\label{eq:sir}
+\begin{aligned}
+\frac{dS}{dt} &= b(t) - \left(\beta(t) \frac{I}{N} + \mu \right) S\\
+\frac{dI}{dt} &= \beta(t) S \frac{I}{N} - (\gamma + \mu) I\\
+\frac{dR}{dt} &= \gamma I - \mu R
+\end{aligned}
+\end{equation}
+where $S$ is the number of susceptible individuals, $I$ is the number of infected individuals, and $R$ is the number of recovered (or removed) individuals.
+We assume that individuals enter the susceptible pool at rate $b(t)$.
+Susceptible individuals become infected at a rate $\beta(t)$ by contacting infected individuals.
+Infected individuals recover at a rate $\gamma$;
+in other words, infectious period is exponentially distributed with mean $1/\gamma$ time units.
+Finally, all individuals experience natural mortality at a rate $\mu$.
+A stochastic simulation of the SIR model is performed using the gillespie algorithm \citep{gillespie1976general}.
+
+\subsection{Epidemic time series}
 
 In order to estimate the parameters of the SIR model, it is important to know what kinds of data are available.
 Epidemic time series can be classified into three categories: incidence, mortality, and prevalence.
 Incidence is defined as the number of newly infected individuals generated over a reporting period.
 Then, true incidence of the SIR model \eref{sir} between time $t$ and $t-\tsub{t}{rep}$, where $\tsub{t}{rep}$ is the length of reporting time step, can be obtained by integrating total infection rate over the reporting period:
 \begin{equation}
-\int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds.
+i_t = \int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds.
 \end{equation}
-Similarly, mortality case, which is defined as the number of individuals that died during a reporting period, can be obtained by integrating total death rate  over the reporting period:
+Similarly, true mortality case, which is defined as the number of individuals that died during a reporting period, can be obtained by integrating total death rate  over the reporting period:
 \begin{equation}
-\int_{t-\tsub{t}{rep}}^{t} \gamma I ds.
+m_t = \int_{t-\tsub{t}{rep}}^{t} \gamma I ds.
 \end{equation}
-Finally, prevalence is defined as the number of infected individuals that are present in the population and corresponds to the state variable $I$.
-Reported incidence, mortality, and prevalence cases can be drawn from a binomial (or beta-binomial) distribution with reporting rate $\rho$.
+Finally, prevalence is defined as the number of infected individuals that are present in the population and corresponds to the state variable $I$; to distinguish the continuous dynamics from the discrete reports, we write $p_t$ to denote true prevalence at time $t$.
+Incidence, mortality, and prevalence for a stochastic simulation is defined in the same manner as described above.
+
+Reported incidence, mortality, and prevalence cases are drawn from a beta-binomial distribution with reporting rate $\rho$ and dispersion parameter $\tsub{\theta}{rep}$ \citep{morris1997disentangling}.
+We assume that cases are reported instantaneously but a more realistic model can incorporate a delay between infection time and reporting time (e.g., infected individuals are likely to report after symptom onset but before recovery).
+While we do not explore these ideas here.
+
+Instead, we focus our discussion on how 
+
+
+\subsection{Fitting methods}
+
+\subsubsection*{Time-series SIR model}
+
+The time-series SIR (TSIR) method was developed by \cite{bjornstad2002dynamics} to estimate seasonally varying transmission rates of measles.
+The TSIR method begins by discretizing the infection process, assuming that disease generation-time is equal to reporting interval:
+\begin{equation}
+\begin{aligned}
+S_{t+1} &= B_t + S_t - I_{t+1}
+I_{t+1} &= \beta_t S_t \frac{I_t^\alpha}{N_t}
+\end{aligned}
+\end{equation}
+where $\alpha$ is often referred to as a conversion factor from continuous-time model to discrete-time model or a heterogeneity parameter [CITE].
+True incidence, $I_t$, is inferred from the observed incidence, $y_t$, and estimated reporting rate $\rho_t$: $I_t = y_t/\rho_t$.
+Taking log on both sides, estimation of transmission rates $\beta_t$ becomes a regression problem:
+\begin{equation}\label{eq:tsir}
+\log I_{t + 1} = \log \beta_t + \log S_t + \alpha \log I_t - \log N_t + \epsilon_t.
+\end{equation}
+
+
+
+\section{Results}
+
+\section{Discussion}
+
+\section{Data}
 
 When reporting period is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
 Indeed, for the simple SIR model \eref{sir}, it can be shown that incidence, prevalence, and mortality are similar to each other under Euler approximation when reporting period is equal to mean generation time (see Appendix).
@@ -137,27 +184,6 @@ Treating incidence report as prevalene report (and vice versa) should be avoided
 \swp{Say something more}
 
 \section{TSIR model}
-
-\subsection{Model}
-
-The time-series SIR (TSIR) method was developed by \cite{bjornstad2002dynamics} to estimate seasonally varying transmission rates of measles.
-The TSIR method begins by discretizing the infection process, assuming that disease generation-time is equal to reporting interval:
-\begin{equation}
-\begin{aligned}
-S_{t+1} &= B_t + S_t - I_{t+1}
-I_{t+1} &= \beta_t S_t \frac{I_t^\alpha}{N_t}
-\end{aligned}
-\end{equation}
-where $\alpha$ is often referred to as a conversion factor from continuous-time model to discrete-time model or a heterogeneity parameter [CITE].
-True incidence, $I_t$, is inferred from the observed incidence, $y_t$, and estimated reporting rate $\rho_t$: $I_t = y_t/\rho_t$.
-Taking log on both sides, estimation of transmission rates $\beta_t$ becomes a regression problem:
-\begin{equation}\label{eq:tsir}
-\log I_{t + 1} = \log \beta_t + \log S_t + \alpha \log I_t - \log N_t + \epsilon_t.
-\end{equation}
-
-In order for to estimate time-varying transmission rate $\beta_t$, the TSIR model makes several assumptions. 
-For example, it assumes that (1) reporting period is equal to mean generation time and (2) total number of birth is equal to total number of cases to allow for susceptible reconstruction.
-Here, we discuss how 
 
 \subsection{Probability of infection}
 
