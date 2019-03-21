@@ -17,7 +17,7 @@ boston <- rr %>%
 		births=rec
 	)
 
-bs_fit <- runtsir(boston, alpha=0.975, sbar=0.035, inits.fit=TRUE)
+bs_fit <- runtsir(boston, alpha=0.975, sbar=0.051, inits.fit=TRUE)
 
 globals <- Csnippet(paste0("double S0=", bs_fit$inits[1], "; double I0=", bs_fit$inits[2], ";"))
 
@@ -30,8 +30,8 @@ fitdata <- data.frame(
 
 fitdata$cases[fitdata$cases==0] <- 1
 
-alphavec <- seq(0.9, 1, by=0.01)
-sigmavec <- seq(0, 0.9, by=0.1)
+alphavec <- seq(0.9, 1, by=0.005)
+sigmavec <- seq(0, 0.9, by=0.05)
 
 liklist <- tsirlist <- simlist <- vector('list', length(alphavec))
 
@@ -40,7 +40,7 @@ for (i in 1:length(alphavec)) {
 	print(i)
 	alpha <- alphavec[i]
 	
-	tsir_fit <- runtsir(boston, alpha=alpha, sbar=0.035, userYhat=bs_fit$Yhat, regtype="user", nsim=1)
+	tsir_fit <- runtsir(boston, alpha=alpha, sbar=0.051, userYhat=bs_fit$Yhat, regtype="user", nsim=1)
 	
 	pomp_covar <- data.frame(
 		ctime=1:nrow(boston),
@@ -62,7 +62,7 @@ for (i in 1:length(alphavec)) {
 	tsir_var <- var(residuals(tsir_fit$glmfit))
 	
 	fitlist <- lapply(sigmavec, function(x) {
-		pp <- logmeanexp(replicate(10, logLik(pfilter(pomp_model, param=c(alpha=alpha, sigma_p=sqrt(x * tsir_var), sigma_o=sqrt(1-x * tsir_var)), Np=10000, tol=1e-301))), se=TRUE)
+		pp <- logmeanexp(replicate(10, logLik(pfilter(pomp_model, param=c(alpha=alpha, sigma_p=sqrt(x * tsir_var), sigma_o=sqrt((1-x) * tsir_var)), Np=10000, tol=1e-301))), se=TRUE)
 		
 		data.frame(
 			logLik=pp[1],
