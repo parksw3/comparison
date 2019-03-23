@@ -1,0 +1,5 @@
+for BATCHNUM in {0..9}; do
+echo $BATCHNUM
+fn=tsir_pomp_renewal_fit${BATCHNUM}
+sqsub -q serial -o $fn.%J.out --mpp 8G -r 48h R CMD BATCH --vanilla "--args $BATCHNUM" tsir_pomp_renewal_fit.R $fn.Rout
+done;

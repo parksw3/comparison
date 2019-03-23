@@ -3,12 +3,12 @@ library(pomp)
 source("../R/fitfun_pomp_renewal.R")
 source("../R/confint_pomp.R")
 
-load("../data/gillespie_data.rda")
+load("../data/tsir_data.rda")
 
 argvals <- commandArgs(trailingOnly=TRUE)
 batch_num <- as.numeric(argvals[1])
 
-fn <- paste0("pomp_renewal_fit_fix_Gvar_fine_", batch_num, ".rda")
+fn <- paste0("tsir_pomp_renewal_fit_", batch_num, ".rda")
 
 globals <- Csnippet(paste0("double N0=100000; double Gmean=1;"))
 
@@ -24,15 +24,20 @@ for (i in 1:nsim) {
 	
 	dd <- datalist[[j]][1:20,]
 	
-	pomp_arg <- make_pomp_renewal(ell=120, nstep=20)
+	dd <- data.frame(
+		time=dd$t,
+		incidence=dd$incidence
+	)
+	
+	pomp_arg <- make_pomp_renewal()
 	
 	pomp_arg2 <- append(pomp_arg, list(data=dd, globals=globals, t0=0))
 	
 	pomp_model <- do.call(pomp, pomp_arg2)
 	
-	start <- c(R0=2, rho=0.7, I0=1e-4, disp=10, Gvar=1)
+	start <- c(R0=1.8, rho=0.7, I0=1e-4, disp=10, Gvar=0.1)
 	
-	rwsd_arg <- list(R0=0.05, rho=0.05, I0=0.05, disp=0.05, Gvar=0)
+	rwsd_arg <- list(R0=0.05, rho=0.05, I0=0.05, disp=0.05, Gvar=0.01)
 	
 	m <- mif2(
 		pomp_model,

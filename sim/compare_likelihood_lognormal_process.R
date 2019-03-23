@@ -31,7 +31,7 @@ fitdata <- data.frame(
 fitdata$cases[fitdata$cases==0] <- 1
 
 alphavec <- seq(0.9, 1, by=0.005)
-sigmavec <- seq(0, 0.9, by=0.05)
+sigmavec <- seq(0, 0.95, by=0.05)
 
 liklist <- tsirlist <- simlist <- vector('list', length(alphavec))
 
