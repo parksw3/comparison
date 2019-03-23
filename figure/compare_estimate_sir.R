@@ -57,7 +57,7 @@ allcover_sir$renewal_pomp <- bind_rows(templist)
 
 templist <- list()
 for (i in 0:9) {
-	fn <- paste0("../sir_fit/pomp_renewal_fit_fix_Gvar_", i, ".rda")
+	fn <- paste0("../sir_fit/pomp_renewal_fit_fix_Gvar_fine_", i, ".rda")
 	
 	load(fn)
 	

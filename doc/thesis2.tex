@@ -25,7 +25,7 @@
    \begin{center}
        \vspace*{1cm}
  
-       \textbf{A practicel guide to fitting an SIR model}
+       \textbf{Estimating time-varying transmission rates of the SIR model}
  
        \vspace{1.5cm}
  
@@ -212,21 +212,78 @@ First, we can model transmission rate as a function of susceptibles $S$ by fitti
 \frac{df(t)}{dt} \sim \mathrm{Normal}(g(S_t) - (\gamma + \mu), \sigma^2),
 \end{equation}
 where $g$ is a non-parametric function that represents the transmission rate and the unobserved susceptible population $S_t$ can be estimated from susceptible reconstruction.
-When transmission varies over time, 
+When transmission varies over time, we can either (1) model transmission rate as an interaction term between a factor variable that represents time of the year and a smoothing term (i.e., fit a separate nonparametric curve $g$ for each factor level) or try to separate transmission rate from the susceptible dynamics using a log link function:
+\begin{equation}
+\frac{d f(t)}{dt} + (\gamma + \mu) \sim \mathrm{Normal}\left(\exp \left(\log \beta_t + \log S_t\right), \sigma^2\right),
+\end{equation}
+where log number of susceptible individuals $\log S_t$ is treated as an offset term and the log transmission rate can be estimated is estimated as a function of time of year using a nonparametric regression.
 
+\subsubsection*{Sequential Monte Carlo}
 
+Calculating the exact likelihood for a nonlinear stochastic system is practically impossible.
+Instead, Sequential Monte Carlo (particle filtering) allows the likelihood to be approximated via simulations.
+Let $X_t = \{\mathbf{x}_{t, i} \,|\, i= 1, 2, \dots, n\}$ be the set of states (particles) at time $t$ and $h$ be the process model.
+For the SIR model, each particle $\mathbf{x}_{t, i} \in X$ consists of number of susceptible individuals $S_t$ and number of infected individuals $I_t$.
+Then, we can predict the states at next time step $t+1$ for each particle using the process model: $h(\mathbf{x}_{t, i})$.
+For each prediction $h(\mathbf{x}_{t, i})$, we can calcuate the likelihood $w_{t,i}$ of the observation at time $t+1$ and define marginal likelihood by taking the average: $\bar{w}_t$.
+Finally, we draw $n$ weighted samples from the set $\{h(\mathbf{x}_{t, i}) \,|\, i = 1=2, \dots, n\}$, where the weight of each $h(\mathbf{x}_{t, i})$ is proportional to $w_i$, to obtain the next set of particles $X_{t+1}$.
+This algorithm is repeated until the final time step.
+Then, complete likelihood of the data is given by the product of the marginal likelihood at each time step: $\prod \bar{w}_{t}$.
 
-\subsubsection*{Particle filtering}
+While Sequential Monte Carlo provides a powerful technique for approximating the likelihood, it is still impractical to fit a continuous-time stochastic model. 
+For example, it can take more than \swp{10} hours to simulate an 20-year-long measles time series with gillespie algorithm. 
+Computing a likelihood with Sequential Monte Carlo would take more than a few days, let alone maximizing the likelihood.
 
-
+Instead of fitting a continuous-time model, we can assume that an epidemic process is a partially observed discrete-time Markov process and discretize the system by using a hazard approximation of the transition probabilities between states:
+\begin{equation}
+\begin{aligned}
+B(t) &\sim \mathrm{Poisson}(b(t) \Delta t)\\
+F_{S}(t) &\sim \mathrm{Binomial}(S_t, 1 - \exp(- (r_1 + r_2) \Delta t))\\
+F_{I}(t) &\sim \mathrm{Binomial}(I_t, 1 - \exp(- (r_3 + r_4) \Delta t))\\
+F_{S,I}(t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{r_1}{r_1 + r_2}\right)\\
+S(t+\Delta t) &= B(t) + S(t) - F_{S}(t) \\
+I(t+\Delta t) &= F{S,I}(t) + I(t) - F_{I}(t)\\
+C(t+\Delta t) &= C(t) + F{S,I}(t)\\
+\end{aligned}
+\end{equation}
+where $r_1 = \beta I/N$, $r_3 = \gamma$, and $r_2 = r_4 = \mu$.
+Random variables $F_S(t)$ and $F_I(t)$ represent the total number of individuals that move out from susceptible $S$ and infected $I$ states. Likewise, $F_{S, I}(t)$ represent the total number of individual move from susceptible state $S$ to infected state $t$.
+Finally, the state variable $C(t)$ keeps track of cumulative incidence.
+Again, observation likelihood is defined using a negative-binomial distribution:
+\begin{equation}
+i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}(\rho (C(t) - C(t - \tsub{t}{rep})) , \tsub{\phi}{obs}).
+\end{equation}
 
 \subsubsection*{Renewal equation}
+
+Previously discussed models assume that the shape of generation-interval distribution is exactly known.
+The continuous time SIR model assumes that generation intervals are exponentially distributed.
+The discrete-time SIR model represented as a partially observed Markov process assumes that generation intervals are geometrically distributed.
+Finally, the TSIR assumes that generation intervals are fixed.
+All these assumptions are unrealistic; we expect a realistic generation-interval distribution of measles to be narrow but not fixed.
+
+One way to relax this assumption is to use the renewal equation:
+\begin{equation}
+i(t) = \mathcal R_0 S(t) \int_0^t g(t-s) i(s) ds,
+\end{equation}
+where $i(t)$ represents incidence, $S(t)$ represents number of susceptible individuals, $g(t)$ represents generation-interval distribution and $\mathcal R_0$ represents the basic reproductive number.
+Since the renewal equation allows us to model generation-interval distributions explicitly  
+
+To overcome this problem, 
+
+The renewal equation allows us to estimate the shape of the generation-interval distributions as well as the transmission rates by modeling incidence as a function of the previous incidence and the generation interval distribution:
+\begin{equation}
+i(t) = \mathcal R_0 S(t) \int_0^t g(t-s) i(s) ds.
+\end{equation}
+
+
+ \citep{li2018fitting}
 
 
 
 \section{Results}
 
-\subsection{Data structure}
+\subsection{Types of time series}
 
 When reporting period is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
 Indeed, for the simple SIR model \eref{sir}, it can be shown that incidence, prevalence, and mortality are similar to each other under Euler approximation when reporting period is equal to mean generation time (see Appendix).
