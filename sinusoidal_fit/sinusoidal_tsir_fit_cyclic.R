@@ -45,6 +45,11 @@ for (i in 1:nsim) {
 			biweek=head(dd$biweek, -1)
 		)
 		
+		tempdata <- fitdata[fitdata$biweek==26,]
+		tempdata$biweek <- 0
+		
+		fitdata <- rbind(fitdata, tempdata)
+		
 		fitdata$offterm <- log(fitdata$S) - log(fitdata$N)
 		
 		lfit <- gam(logInew ~  s(biweek, bs="cc") + logIprev + offset(offterm), data=fitdata)

@@ -262,24 +262,37 @@ The discrete-time SIR model represented as a partially observed Markov process a
 Finally, the TSIR assumes that generation intervals are fixed.
 All these assumptions are unrealistic; we expect a realistic generation-interval distribution of measles to be narrow but not fixed.
 
-One way to relax this assumption is to use the renewal equation:
+It is possible to relax the assumption on generation-interval distribution of the SIR model by including a latent period and allowing for infectious and latent periods to have multiple stages.
+However, the number of stages (compartments) in each state must be predetermined before parameter estimation is performed.
+Instead, we can model true incidence as a function of previous incidence and generation-interval distributions explicitly via the renewal equation:
 \begin{equation}
 i(t) = \mathcal R_0 S(t) \int_0^t g(t-s) i(s) ds,
 \end{equation}
 where $i(t)$ represents incidence, $S(t)$ represents number of susceptible individuals, $g(t)$ represents generation-interval distribution and $\mathcal R_0$ represents the basic reproductive number.
-Since the renewal equation allows us to model generation-interval distributions explicitly  
+Because this model generalizes the compartmental models with Erlang distributed latent and infectious periods, including the standard SIR model \citep{champredon2018equivalence}, we expect this model to perform better in analyzing time series of outbreaks.
 
-To overcome this problem, 
-
-The renewal equation allows us to estimate the shape of the generation-interval distributions as well as the transmission rates by modeling incidence as a function of the previous incidence and the generation interval distribution:
+Previous studies used a discrete time version of the renewal equation model to analyze Ebola epidemics but assumed that the simulation time step was equal to the reporting time step \citep{li2018fitting, champredon2018two}. 
+Here, we extend their model by simulating the epidemic on a finer scale and allowing for natural birth and death in the susceptible population:
 \begin{equation}
-i(t) = \mathcal R_0 S(t) \int_0^t g(t-s) i(s) ds.
+\begin{aligned}
+B(t) &\sim \mathrm{Poisson}(b(t) \Delta t)\\
+\phi(t) &= \mathcal R(t) \sum_{k=1}^\ell i(t - k \Delta t) g(k \Delta t)\\
+F_{S}(t) &\sim \mathrm{Binomial}\left(S(t), 1 - e^{-(\phi(t) + \mu \Delta t)} \right)\\
+i(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(t) + \mu \Delta t} \right)\\
+S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
+\end{aligned}
 \end{equation}
 
+\subsection{Splines}
 
- \citep{li2018fitting}
-
-
+In order to estimate time-varying transmission rates as a smooth function of time, we model transmission rate $\beta(t)$ using a spline function \citep{hooker2010parameterizing}:
+\begin{equation}
+\beta(t) = \sum_{i=1}^k \phi_i(t) b_i,
+\end{equation}
+where each $\phi_i$ is a cyclic cubic B-spline basis and $b_i$ is the corresponding coefficient.
+Here, we fix knot locations at every two biweeks (1/13 years);
+this parameterization results in almost a two-fold reduction in the number of parameters to be estimated compared to the regular TSIR procedure, which estimates a separate transmission rate for every biweek.
+For regression-based methods (TSIR and gradient matching), we allow the number of knots to be estimated within the regression method by the Restricted Maximum Likelihood (REML) approach \citep{wood2012mgcv}.
 
 \section{Results}
 
@@ -321,42 +334,6 @@ We find that fitting mortality and prevalence yields consistent estimates of bot
 Treating incidence report as prevalene report (and vice versa) should be avoided.
 
 \swp{Say something more}
-
-
-\section{Discussion}
-
-\section{Data}
-
-\section{TSIR model}
-
-\subsection{Probability of infection}
-
-The TSIR model assumes that probability of infection is a nonlinear function of prevalence: $\beta I^\alpha/N$.
-This contrasts with the linear assumption of the Euler approximation ($\beta I/N$) or the exponenital assumption of the hazard-based approximation ($1 - \exp(- \beta I/N)$).
-Inclusion of the parameter $\alpha$ has been previously attributed to heterogeneity in the population or changes from continuous to discrete time model.
-However, there is still a room for clearer understanding of the actual role of the parameter $\alpha$:
-for example, a few studies recognize that the estimated $\alpha$ does not always correspond to the best predictive $\alpha$ and resorted to assuming $\alpha = 0.97$.
-
-Glass et al derived an analytical expression for optimal values of $\alpha$ by comparing the changes in the infected population at equilibrium using a second order Taylor expansion. 
-Based on their approximation, optimal value of $\alpha$ equals 1 when there is no birth term.
-Instead, when we rewrite the TSIR model as 
-\begin{equation}
-\log \left(\frac{I_{t+1}}{S_t}\right) = \log\left(\frac{\beta I_t^\alpha}{N_t}\right) + \epsilon_t.
-\end{equation}
-it becomes much clearer that the TSIR model is trying to match the log probability of infection (when an epidemic is ongoing, changes in the susceptible population $S_t$ through natural birth or death is negeligible over a generation, and $I_{t+1}/S_t$ can be interpreted as the probability of infection over a generation). 
-Then, we almost always expect $\alpha$ to be less than one because we expect the probability of infection (i.e., probability of finding a new host) to experience density dependence.
-
-Though the difference in the interpretation of $\alpha$ is subtle, this perspective allows us to derive a useful connection between the discrete-time model and the continuous-time model.
-A naive estimate of basic reproductive number from the TSIR model is $\beta$.
-However, as discussed earlier, we often prefer to use hazard-based approach to approximate the continuous-time model. 
-Then, we can find $\hat \beta$ such that $1 - \exp(-\hat\beta I/N)$ matches $\beta I^\alpha/N$ and use $\hat \beta$ as our estimate of the basic reproductive number instead.
-A simple way to match two functions is to match their values at the mean observed incidence.
-This corrections reduces bias in the estimate of the reproductive number by a large amount.
-
-\subsection{Process model}
-
-The TSIR model is often associated with three different process models: deterministic ($I_{t+1} = \beta_t S_t I_t^\alpha/N$), poisson ($I_{t+1} \sim \mathrm{Poisson}(\beta_t S_t I_t^\alpha/N)$), and negative binomial ($I_{t+1} \sim \mathrm{NB}(\beta_t S_t I_t^\alpha/N, I_t)$).
-
 
 \subsection{Susceptible reconstruction}
 
@@ -402,36 +379,66 @@ We allow for population size to stay constant or increase over time and also all
 We find that estimating time-varying reporting rate is difficult.
 We also find that $Z_t$ estimated form regression better matches $S_t - \bar{S}$ rather than $S_t - \sigma N$, i.e., any long term dynamics in the susceptible population is captured in $Z_t$.
 
-\subsection{Splines}
+\subsection{Density dependence}
+
+In continuous time SIR model, density dependence of the infection process is implicit in the nonlinear infection term, $\beta S I/N$.
+In discrete time SIR models, density dependence must be accounted for explicitly.
+The most common way to achieve this is to approximate the probability of infection a hazard: $1- \exp(- \phi \Delta t)$ where $\phi = \beta I/N$ is the force of infection.
+This term accounts for increasing competition among infected individuals to find a susceptible host, which results in saturation in the probability of infection.
+
+On the other hand, the TSIR model assumes that the probability of infection follows a power function of previous incidence: $\beta i^\alpha/N$, where $\alpha$ has been referred to as the correction factor for heterogeneity or discretization of a continuous model \citep{glass2003interpreting}.
+\cite{glass2003interpreting} further derived an analytical expression for the optimal value of $\alpha$ as a function of birth rate and the basic reproductive number by comparing the second order Taylor expansion of the TSIR model to that of a continuous time model;
+based on their approximation, 
+
+Instead, interpreting $\alpha$ as the strength of density dependence, in line with our previous argument,  
 
 
-\pagebreak
 
-\section{Other fitting methods}
+\subsection{Estimates}
 
-\subsection{Trajectory matching}
 
-\subsection{Gradient matching}
-
-\subsection{Particle filtering}
-
-\subsection{Renewal equation}
-
-\pagebreak
-
-\section{Numerical comparison of different methods}
-
-\subsection{Single outbreak}
-
-\subsection{Time-varying transmission rate}
-
-\pagebreak
-
-\section{Case study}
 
 \section{Discussion}
 
+\section{Data}
+
+\section{TSIR model}
+
+\subsection{Probability of infection}
+
+The TSIR model assumes that probability of infection is a nonlinear function of prevalence: $\beta I^\alpha/N$.
+This contrasts with the linear assumption of the Euler approximation ($\beta I/N$) or the exponenital assumption of the hazard-based approximation ($1 - \exp(- \beta I/N)$).
+Inclusion of the parameter $\alpha$ has been previously attributed to heterogeneity in the population or changes from continuous to discrete time model.
+However, there is still a room for clearer understanding of the actual role of the parameter $\alpha$:
+for example, a few studies recognize that the estimated $\alpha$ does not always correspond to the best predictive $\alpha$ and resorted to assuming $\alpha = 0.97$.
+
+Glass et al derived an analytical expression for optimal values of $\alpha$ by comparing the changes in the infected population at equilibrium using a second order Taylor expansion. 
+Based on their approximation, optimal value of $\alpha$ equals 1 when there is no birth term.
+Instead, when we rewrite the TSIR model as 
+\begin{equation}
+\log \left(\frac{I_{t+1}}{S_t}\right) = \log\left(\frac{\beta I_t^\alpha}{N_t}\right) + \epsilon_t.
+\end{equation}
+it becomes much clearer that the TSIR model is trying to match the log probability of infection (when an epidemic is ongoing, changes in the susceptible population $S_t$ through natural birth or death is negeligible over a generation, and $I_{t+1}/S_t$ can be interpreted as the probability of infection over a generation). 
+Then, we almost always expect $\alpha$ to be less than one because we expect the probability of infection (i.e., probability of finding a new host) to experience density dependence.
+
+Though the difference in the interpretation of $\alpha$ is subtle, this perspective allows us to derive a useful connection between the discrete-time model and the continuous-time model.
+A naive estimate of basic reproductive number from the TSIR model is $\beta$.
+However, as discussed earlier, we often prefer to use hazard-based approach to approximate the continuous-time model. 
+Then, we can find $\hat \beta$ such that $1 - \exp(-\hat\beta I/N)$ matches $\beta I^\alpha/N$ and use $\hat \beta$ as our estimate of the basic reproductive number instead.
+A simple way to match two functions is to match their values at the mean observed incidence.
+This corrections reduces bias in the estimate of the reproductive number by a large amount.
+
+\subsection{Process model}
+
+The TSIR model is often associated with three different process models: deterministic ($I_{t+1} = \beta_t S_t I_t^\alpha/N$), poisson ($I_{t+1} \sim \mathrm{Poisson}(\beta_t S_t I_t^\alpha/N)$), and negative binomial ($I_{t+1} \sim \mathrm{NB}(\beta_t S_t I_t^\alpha/N, I_t)$).
+
+
+\subsection{Susceptible reconstruction}
+
+
+
 \pagebreak
+
 
 \section{Appendix}
 
@@ -461,49 +468,12 @@ Here, we assumed that individuals leaving infected class $I$ from natural mortal
 
 \section{Fitting continuous models}
 
-\subsection{Trajectory matching}
-
-Trajectory matching is one of the simplest fitting methods.
-As its name suggests, the goal is to find a set of parameters such that the deterministic trajectory of the ODE model best matches the observed data.
-This method assumes that there is only measurement error and no process error.
-The measurement model can be written as:
-\begin{equation}
-y_t \sim \mathrm{NegBinomial}\left(\mu_t= \int_{t-\Delta t}^{t} \beta(s) S \frac{\hat{I}}{N} ds, \phi \right),
-\end{equation}
-where $\rho$ is reporting rate and $\phi$ is dispersion parameter.
-We prefer this model compared to the binomial or beta-binomial model because fitting binomial or beta-binomial models may not work if there are any irregular patterns in the data.
-
 \subsection{Gradient matching}
 
 \begin{figure}[t]
 \includegraphics[width=\textwidth]{../figure/gradient_matching_sinusoidal.pdf}
 \caption{This is not a caption.}
 \end{figure}
-
-When \emph{all} state variables are observed, we can fit smooth curves to the data and obtain an estimate of the gradients of the ODE by taking the derivatives of the estimated smooth functions.
-Gradient matching methods seek to estimate the rate equation using nonparametric regression.
-However, for most epidemics, it is impossible to have data of all state variables.
-When only incidence is provided, we have no direct observations of any state variables. 
-If we can reconstruct the dynamics of the susceptible population and assume that incidence is sufficiently similar to prevalence, we can still be able to apply gradient mathing methods.
-
-Observe that
-\begin{equation}
-\frac{d \log\hat{I}}{dt} = \beta(t) \frac{S}{N} - (\gamma + \mu),
-\end{equation}
-If we can obtain a reasonable estimate of the gradient $Z_i = d \log \hat{I}/dt (t_i)$, we can write
-\begin{equation}
-Z_i + (\gamma + \mu) = \exp \left(\log \beta (t_i) + \log S_i - \log N \right)  + \epsilon_i
-\end{equation}
-and estimate $\beta$, given that we can reconstruct the susceptible dynamics $S_i$.
-Estimate of $\beta$ can be done using nonparametric regression by treating $\log S_i$ and $\log N$ as offset terms.
-
-First, we want to test whether gradients can be reliably estimated from incidence data alone by simulating a deterministic SIR model with measurement error.
-We use natural cubic spline with knots placed every 6 biweeks.
-It works generally well but there is systematic bias.
-When gradients are at their local maxima (and minima), we tend to overestimate (and underestimate) the gradients.
-This is because incidence precedes prevalence???
-
-If we simply construct confidence intervals based on equation ?? we underestimate uncertainty significantly by ignoring the uncertainty in the estimated gradients $Z_i$.
 
 Conditions:
 \begin{itemize}

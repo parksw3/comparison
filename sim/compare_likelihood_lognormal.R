@@ -17,7 +17,7 @@ boston <- rr %>%
 		births=rec
 	)
 
-bs_fit <- runtsir(boston, alpha=0.975, sbar=0.051, inits.fit=TRUE)
+bs_fit <- runtsir(boston, inits.fit=FALSE, regtype="spline")
 
 globals <- Csnippet(paste0("double I0=", bs_fit$inits[2], ";"))
 
@@ -40,7 +40,7 @@ for (i in 1:length(alphavec)) {
 	print(i)
 	alpha <- alphavec[i]
 	
-	tsir_fit <- runtsir(boston, alpha=alpha, sbar=0.051, userYhat=bs_fit$Yhat, regtype="user", nsim=1)
+	tsir_fit <- runtsir(boston, alpha=alpha, sbar=bs_fit$sbar/mean(boston$pop), userYhat=bs_fit$Yhat, regtype="user", nsim=1)
 	
 	pomp_covar <- data.frame(
 		ctime=1:nrow(boston),
@@ -48,7 +48,7 @@ for (i in 1:length(alphavec)) {
 		N=boston$pop,
 		Beta=rep(tsir_fit$beta, 100)[1:nrow(boston)],
 		rho=1/bs_fit$rho,
-		S=0.051 * mean(rr$pop) + bs_fit$Z
+		S=bs_fit$sbar/mean(boston$pop) * mean(rr$pop) + bs_fit$Z
 	)
 	
 	pomp_model <- do.call(pomp, append(
@@ -58,7 +58,7 @@ for (i in 1:length(alphavec)) {
 			t0=1,
 			covar=pomp_covar,
 			globals=globals
-		))) 
+		)))
 	
 	tsir_var <- var(residuals(tsir_fit$glmfit))
 	

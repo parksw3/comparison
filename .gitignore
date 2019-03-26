@@ -4,3 +4,9 @@
 .Ruserdata
 *.rda
 *.Rout
+*.bbl
+*.log
+*.nav
+*.snm
+*.synctex.gz
+*.toc

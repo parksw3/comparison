@@ -31,10 +31,15 @@ for (i in 1:nsim) {
 	
 	for (j in 1:length(S0vec)) {
 		fitdata <- data.frame(
-			grad=diff(predict(gfit, newdata = data.frame(time=1:(nrow(dd)+1))))+1,
+			grad=(predict(gfit, newdata = data.frame(time=1:(nrow(dd))+0.1))-predict(gfit))/0.1+1+1/50,
 			logS=log(S0vec[j]*N + Z),
 			biweek=dd$biweek
 		)
+		
+		tempdata <- fitdata[fitdata$biweek==26,]
+		tempdata$biweek <- 0
+		
+		fitdata <- rbind(fitdata, tempdata)
 		
 		fitdata$offterm <- fitdata$logS - log(N)
 		
@@ -47,10 +52,15 @@ for (i in 1:nsim) {
 	j <- which.max(llvec)
 	
 	fitdata <- data.frame(
-		grad=diff(predict(gfit, newdata = data.frame(time=1:(nrow(dd)+1))))+1,
+		grad=(predict(gfit, newdata = data.frame(time=1:(nrow(dd))+0.1))-predict(gfit))/0.1+1+1/50,
 		logS=log(S0vec[j]*N + Z),
 		biweek=dd$biweek
 	)
+	
+	tempdata <- fitdata[fitdata$biweek==26,]
+	tempdata$biweek <- 0
+	
+	fitdata <- rbind(fitdata, tempdata)
 	
 	fitdata$offterm <- fitdata$logS - log(N)
 	

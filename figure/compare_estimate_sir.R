@@ -13,9 +13,9 @@ scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,p
 scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
 
 classify <- data.frame(
-	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp", "renewal_pomp_fix"),
-	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete", "Discrete"),
-	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation", "Simulation")
+	type=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
+	time=c("Continuous", "Continuous", "Discrete", "Discrete", "Discrete"),
+	est=c("Simulation", "Regression", "Regression", "Simulation", "Simulation")
 )
 
 allcover_sir <- list()
@@ -44,7 +44,7 @@ allcover_sir$pomp <- bind_rows(templist)
 
 templist <- list()
 for (i in 0:9) {
-	fn <- paste0("../sir_fit/pomp_renewal_fit_", i, ".rda")
+	fn <- paste0("../sir_fit/pomp_renewal_fit_fine_", i, ".rda")
 	
 	load(fn)
 	
@@ -55,71 +55,14 @@ for (i in 0:9) {
 
 allcover_sir$renewal_pomp <- bind_rows(templist)
 
-templist <- list()
-for (i in 0:9) {
-	fn <- paste0("../sir_fit/pomp_renewal_fit_fix_Gvar_fine_", i, ".rda")
-	
-	load(fn)
-	
-	templist[[i+1]] <- fitlist %>%
-		bind_rows(.id="sim") %>%
-		mutate(sim=as.character(as.numeric(sim)+i*10))
-}
-
-allcover_sir$renewal_pomp_fix <- bind_rows(templist)
-
 load("../sir_fit/tsir_fit.rda")
 
 allcover_sir$tsir <- bind_rows(fitlist, .id="sim")
 
-## load TSIR fits
-
-load("../tsir_fit/tsir_trajectory_fit.rda")
-
-allcover_tsir$trajectory <- bind_rows(fitlist, .id="sim")
-
-load("../tsir_fit/tsir_gradient_fit.rda")
-
-allcover_tsir$gradient <- bind_rows(fitlist, .id="sim")
-
-templist <- list()
-for (i in 0:9) {
-	fn <- paste0("../tsir_fit/tsir_pomp_0_1_fit_", i, ".rda")
-	
-	load(fn)
-	
-	templist[[i+1]] <- fitlist %>% 
-		bind_rows(.id="sim") %>%
-		mutate(sim=as.character(as.numeric(sim)+i*10))
-}
-
-allcover_tsir$pomp <- bind_rows(templist)
-
-load("../tsir_fit/tsir_tsir_fit.rda")
-
-allcover_tsir$tsir <- bind_rows(fitlist, .id="sim")
-
-templist <- list()
-for (i in 0:9) {
-	fn <- paste0("../tsir_fit/tsir_pomp_renewal_fit_", i, ".rda")
-	
-	load(fn)
-	
-	templist[[i+1]] <- fitlist %>%
-		bind_rows(.id="sim") %>%
-		mutate(sim=as.character(as.numeric(sim)+i*10))
-}
-
-allcover_tsir$renewal_pomp <- bind_rows(templist)
-
 alldata_sir <- bind_rows(allcover_sir, .id="type") %>%
 	mutate(sim="gillespie")
-alldata_tsir <- bind_rows(allcover_tsir, .id="type") %>%
-	mutate(sim="tsir")
 
-alldata <- rbind(alldata_sir, alldata_tsir)
-
-estdata <- alldata %>%
+estdata <- alldata_sir %>%
 	mutate(param=ifelse(param=="beta", "R0", param)) %>%
 	filter(param %in% c("R0")) %>%
 	group_by(param, type, sim) %>%
@@ -132,13 +75,12 @@ estdata <- alldata %>%
 	ungroup %>%
 	merge(classify) %>%
 	mutate(
-		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp", "renewal_pomp_fix"),
+		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
 					labels=c("trajectory\nmatching",
 							 "gradient\nmatching",
 							 "tSIR",
 							 "POMP",
-							 "Renewal",
-							 "Renewal\nfixed"))
+							 "Renewal"))
 	)
 
 g1 <- ggplot(estdata) +
@@ -148,7 +90,7 @@ g1 <- ggplot(estdata) +
 	scale_y_continuous("Coverage probability", limits=c(0, 1)) +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
-	ggtitle("Gillespie simulation") +
+	# ggtitle("Gillespie simulation") +
 	xlab("")
 
 g2 <- ggplot(estdata) +
