@@ -23,54 +23,40 @@ boston <- rr %>%
 		births=rec
 	)
 
-bs_fit <- runtsir(boston, alpha=0.975, sbar=0.051, inits.fit=TRUE)
-
-fitdata <- data.frame(
-	time=1:nrow(boston),
-	cases=boston$cases
-)
-
-fitdata$cases[fitdata$cases==0] <- 1
-
-alphavec <- seq(0.9, 1, by=0.005)
-
-likelihood_tsir <- lapply(alphavec, function(x) {
-	alpha <- x
-	
-	tsir_fit <- runtsir(boston, alpha=alpha, sbar=0.051, userYhat=bs_fit$Yhat, regtype="user", nsim=1)
-	
-	data.frame(
-		alpha=x,
-		logLik=logLik(tsir_fit$glmfit),
+tsir_likelihood <- tsirlist %>%
+	lapply(function(x) data.frame(
 		amount=1,
-		se=NA,
-		type="conditional"
-	)
-}) %>%
+		logLik=logLik(x$glmfit),
+		type="conditional",
+		alpha=x$alpha
+	)) %>%
 	bind_rows
 
 likelihood_data <- likelihood_list %>%
 	lapply(bind_rows) %>%
 	bind_rows(.id="type")
 
-tsir_data <- data.frame(
-	alpha=0.975, 
-	amount=1,
-	type="conditional"
-)
-
 global_max <- likelihood_data %>%
 	group_by(type) %>%
 	filter(logLik==max(logLik))
 
-ggplot(filter(likelihood_data, amount > 0.1)) +
+g1 <- ggplot(filter(likelihood_data, amount > 0)) +
 	geom_raster(aes(alpha, amount, fill=logLik)) +
-	geom_point(data=tsir_data, aes(alpha, amount), size=4, shape=1) +
-	geom_point(data=global_max, aes(alpha, amount), size=4, shape=2) +
-	scale_x_continuous(limits=c(0.9, 1), expand=c(0,0)) +
+	stat_contour(data=filter(likelihood_data, type=="conditional"),
+				 aes(alpha, amount, z=logLik), 
+				 breaks=c(global_max$logLik[1]-qchisq(0.95, 2)/2, global_max$logLik[1]-qchisq(0.99, 2)/2),
+				 col="black", lty=2) +
+	stat_contour(data=filter(likelihood_data, type=="unconditional"),
+				 aes(alpha, amount, z=logLik), 
+				 breaks=c(global_max$logLik[2]-qchisq(0.95, 2)/2, global_max$logLik[2]-qchisq(0.99, 2)/2),
+				 col="black", lty=2) +
+	geom_point(data=global_max, aes(alpha, amount), size=2, shape=1) +
+	scale_x_continuous(expand=c(0,0)) +
+	scale_y_continuous("Proportion of process variance", expand=c(0, 0)) +
 	scale_fill_gradientn(colours=terrain.colors(10)) +
-	facet_wrap(~type)
+	facet_wrap(~type) +
+	theme(
+		strip.background = element_blank(),
+		panel.spacing = grid::unit(1, "cm")
+	)
 
-ggplot(filter(likelihood_data, amount==0, alpha < 1)) +
-	geom_line(aes(alpha, logLik)) +
-	facet_wrap(~type, scale="free")

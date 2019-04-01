@@ -19,8 +19,6 @@ boston <- rr %>%
 
 bs_fit <- runtsir(boston, inits.fit=FALSE, regtype="spline")
 
-globals <- Csnippet(paste0("double S0=", bs_fit$inits[1], "; double I0=", bs_fit$inits[2], ";"))
-
 pomp_arg <- make_pomp_tsir_lognormal_process()
 
 fitdata <- data.frame(
@@ -30,7 +28,7 @@ fitdata <- data.frame(
 
 fitdata$cases[fitdata$cases==0] <- 1
 
-alphavec <- seq(0.9, 1, by=0.005)
+alphavec <- seq(0.85, 1, by=0.005)
 sigmavec <- seq(0, 0.95, by=0.05)
 
 liklist <- tsirlist <- simlist <- vector('list', length(alphavec))
@@ -40,7 +38,9 @@ for (i in 1:length(alphavec)) {
 	print(i)
 	alpha <- alphavec[i]
 	
-	tsir_fit <- runtsir(boston, alpha=alpha, sbar=bs_fit$sbar/mean(boston$pop), userYhat=bs_fit$Yhat, regtype="user", nsim=1)
+	tsir_fit <- runtsir(boston, alpha=alpha, userYhat=bs_fit$Yhat, regtype="user", nsim=1)
+	
+	globals <- Csnippet(paste0("double S0=", tsir_fit$inits[1] + tsir_fit$Z[1], "; double I0=", tsir_fit$inits[2], ";"))
 	
 	pomp_covar <- data.frame(
 		ctime=1:nrow(boston),

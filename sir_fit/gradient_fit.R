@@ -27,15 +27,21 @@ for (i in 1:nsim) {
 	
 	fitdata$offterm <- fitdata$logS - log(N)
 	
-	lfit <- gam(grad ~ offset(offterm), data=fitdata,
+	lfit <- glm(grad ~ offset(offterm), data=fitdata,
 				family = gaussian("log"))
 	
 	logR0 <- coef(lfit)[[1]]
 	
+	cc <- confint(lfit)
+	
 	cdata <- data.frame(
 		param=c("beta"),
-		mean=c(exp(logR0))
+		mean=c(exp(logR0)),
+		lwr=exp(cc[1]),
+		upr=exp(cc[2])
 	)
+	
+	cdata$coverage <- (cdata$lwr < 2 && 2 < cdata$upr)
 	
 	fitlist[[i]] <- cdata
 }

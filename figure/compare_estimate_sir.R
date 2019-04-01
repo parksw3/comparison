@@ -8,7 +8,6 @@ if (.Platform$OS.type=="windows") {
 	windowsFonts(Times=windowsFont("Times"))
 } 
 
-## use Dark2 rather than Set1 because colour #6 of Set1 is yellow (ugh/too light)
 scale_colour_discrete <- function(...,palette="Dark2") scale_colour_brewer(...,palette=palette)
 scale_fill_discrete <- function(...,palette="Dark2") scale_fill_brewer(...,palette=palette)
 
@@ -19,7 +18,6 @@ classify <- data.frame(
 )
 
 allcover_sir <- list()
-allcover_tsir <- list()
 
 load("../sir_fit/trajectory_fit.rda")
 

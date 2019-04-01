@@ -30,7 +30,7 @@ fitdata <- data.frame(
 
 fitdata$cases[fitdata$cases==0] <- 1
 
-alphavec <- seq(0.9, 1, by=0.005)
+alphavec <- seq(0.85, 1, by=0.005)
 sigmavec <- seq(0, 0.95, by=0.05)
 
 liklist <- tsirlist <- simlist <- vector('list', length(alphavec))
@@ -40,7 +40,7 @@ for (i in 1:length(alphavec)) {
 	print(i)
 	alpha <- alphavec[i]
 	
-	tsir_fit <- runtsir(boston, alpha=alpha, sbar=bs_fit$sbar/mean(boston$pop), userYhat=bs_fit$Yhat, regtype="user", nsim=1)
+	tsir_fit <- runtsir(boston, alpha=alpha, userYhat=bs_fit$Yhat, regtype="user", nsim=1)
 	
 	pomp_covar <- data.frame(
 		ctime=1:nrow(boston),
@@ -48,7 +48,7 @@ for (i in 1:length(alphavec)) {
 		N=boston$pop,
 		Beta=rep(tsir_fit$beta, 100)[1:nrow(boston)],
 		rho=1/bs_fit$rho,
-		S=bs_fit$sbar/mean(boston$pop) * mean(rr$pop) + bs_fit$Z
+		S=tsir_fit$sbar + bs_fit$Z
 	)
 	
 	pomp_model <- do.call(pomp, append(

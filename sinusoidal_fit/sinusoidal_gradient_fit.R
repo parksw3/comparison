@@ -24,7 +24,7 @@ for (i in 1:nsim) {
 	
 	logI <- log(dd$incidence)
 	
-	gfit <- MASS::glm.nb(incidence~ns(time, knots=seq(1, nrow(dd), by=6)), data=dd)
+	gfit <- lm(log(incidence)~ns(time, knots=seq(1, nrow(dd), by=6)), data=dd)
 	
 	S0vec <- seq(0.03, 0.07, by=0.001)
 	llvec <- rep(NA, length(S0vec))

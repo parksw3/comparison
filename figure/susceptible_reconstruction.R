@@ -70,6 +70,11 @@ data4 <- data.frame(
 	time=1:520
 )
 
+dd <- data.frame(
+	y=cumsum(data4$births),
+	x=cumsum(data4$cases)
+)
+
 rt1 <- runtsir(data1, regtype="gaussian")
 rt2 <- runtsir(data1, regtype="lm")
 rt3 <- runtsir(data1, regtype="spline")
