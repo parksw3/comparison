@@ -44,19 +44,25 @@ g1 <- ggplot(filter(likelihood_data, amount > 0)) +
 	geom_raster(aes(alpha, amount, fill=logLik)) +
 	stat_contour(data=filter(likelihood_data, type=="conditional"),
 				 aes(alpha, amount, z=logLik), 
-				 breaks=c(global_max$logLik[1]-qchisq(0.95, 2)/2, global_max$logLik[1]-qchisq(0.99, 2)/2),
+				 breaks=c(global_max$logLik[1]-qchisq(0.95, 2)/2),
 				 col="black", lty=2) +
 	stat_contour(data=filter(likelihood_data, type=="unconditional"),
 				 aes(alpha, amount, z=logLik), 
-				 breaks=c(global_max$logLik[2]-qchisq(0.95, 2)/2, global_max$logLik[2]-qchisq(0.99, 2)/2),
+				 breaks=c(global_max$logLik[2]-qchisq(0.95, 2)/2),
 				 col="black", lty=2) +
 	geom_point(data=global_max, aes(alpha, amount), size=2, shape=1) +
 	scale_x_continuous(expand=c(0,0)) +
-	scale_y_continuous("Proportion of process variance", expand=c(0, 0)) +
+	scale_y_continuous("Proportion of process variance", expand=c(0, 0), breaks=1:9/10) +
 	scale_fill_gradientn(colours=terrain.colors(10)) +
 	facet_wrap(~type) +
 	theme(
 		strip.background = element_blank(),
 		panel.spacing = grid::unit(1, "cm")
 	)
+
+ggplot(filter(likelihood_data, amount == 0)) +
+	geom_line(aes(alpha, logLik)) +
+	facet_wrap(~type, scale="free")
+	
+
 
