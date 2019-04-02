@@ -134,36 +134,39 @@ Here, we mainly consider two sets of stochastic simulations: (1) a single outbre
 To simulate a single outbreak, we use the following parameterization: $\beta(t) = 2, \gamma=1, \mu=b(t) = 0, N=100000$.
 Initial conditions are specified as follows: $I(0) = 10$ and $S(0) = N - I(0)$.
 To simulate recurrent outbreaks, we use the following parameterization: $\beta(t) = b_0 (1 + b_1 \cos (t/26 \times 2\pi)), b_0 = 500/26, b_1 = 0.15, \gamma = 1, \mu=1/(50 \times 26), N=5000000, b(t) = \mu N$. 
-This parameterization yields a biennial cycle.
 Initial conditions are specified as follows: $I(0) = 1 \times 10^{-4} \times N$ and $S(0) = 0.05 \times N$.
+Parameters for recurrent epidemics are chosen to approximately match the parameters used in \cite{earn1998persistence}, which yields a persistent biennial cycle.
 Note that $\gamma$ is scaled to 1 to represent one generation; for measles, $1/\gamma$ will have a unit of biweeks (14 days).
 Stochastic simulation of the SIR model is performed using the Gillespie algorithm \citep{gillespie1976general}.
 
 \subsection{Epidemic time series}
 
-In order to estimate the parameters of the SIR model, it is important to understand what kinds of data are available.
 Epidemic time series can be broadly classified into three categories: incidence, mortality, and prevalence.
 Incidence is defined as the number of newly infected individuals generated over a reporting period.
 Then, true incidence of the SIR model \eref{sir} between time $t$ and $t-\tsub{t}{rep}$, where $\tsub{t}{rep}$ is the length of reporting time step, can be obtained by integrating total infection rate over the reporting period:
 \begin{equation}
 i_t = \int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds.
 \end{equation}
-Similarly, true mortality case, which is defined as the number of individuals that died during a reporting period, can be obtained by integrating total death rate  over the reporting period:
+Similarly, true mortality, which is defined as the number of individuals that died (or recovered for measles) during a reporting period, can be obtained by integrating total death rate over the reporting period:
 \begin{equation}
 m_t = \int_{t-\tsub{t}{rep}}^{t} \gamma I ds.
 \end{equation}
-Finally, prevalence is defined as the number of infected individuals that are present in the population and corresponds to the state variable $I$; to distinguish the continuous dynamics from the discrete reports, we write $p_t$ to denote true prevalence at time $t$.
-Incidence, mortality, and prevalence for a stochastic simulation is defined in the same manner as described above.
+Finally, prevalence is defined as the number of infected individuals that are present in the population; 
+this corresponds to the state variable $I$. 
+Incidence, mortality, and prevalence for a stochastic simulation are defined in the same manner.
 
-Reported incidence, mortality, and prevalence cases are drawn from a beta-binomial distribution with reporting rate $\rho$ and dispersion parameter $\tsub{\theta}{rep}$ \citep{morris1997disentangling}.
-We assume that cases are reported instantaneously but a more realistic model can incorporate a delay between infection time and reporting time (e.g., infected individuals are likely to report after symptom onset but before recovery).
-We do not explore these ideas here.
+Reported incidence, mortality, and prevalence cases are drawn from a beta-binomial distribution with reporting rate $\rho$, dispersion parameter $\tsub{\theta}{rep}$, and their corresponding true values \citep{morris1997disentangling}.
+Unless noted otherwise, we use $\tsub{\theta}{rep} = 10$ throughout simulations.
+Here, we assume that cases are reported instantaneously; 
+a more realistic model can incorporate a delay between infection time and reporting time (e.g., infected individuals are likely to report after symptom onset but before recovery).
+We do not explore these ideas explicitly.
 
 Instead, we focus on how different assumptions about an epidemic time series (whether it represents incidence, mortality, or prevalence) affect our inference.
-While this question is initially motivated by the TSIR framework, where incidence is assumed to be equal to prevalence when reporting time is equal to mean generation time, the actual problem of identifying the correct representation of an epidemic time series is far more common.
-For example, incidence has been assumed to be measured either upon transition from latent to infectious stage \citep{hooker2010parameterizing, althaus2014estimating} or upon recovery \citep{he2009plug}, where the latter assumption is equivalent to our definition of mortality reports.
+While this question was initially motivated by the TSIR framework, in which incidence is assumed to be equal to prevalence when reporting time is equal to mean generation time, 
+misclassification of epidemic time series is not rare.
+For example, \cite{he2009plug} assume that incidence is measured upon recovery whereas \cite{hooker2010parameterizing, althaus2014estimating} assume that incidence is measured upon transition from latent to infectious period.
 Understanding these differences is crucial in order to correctly estimate underlying parameters as well as their associated uncertainties.
-For all other purposes, we use incidence time series throughout this study.
+For all other purposes, we use the incidence time series throughout this study.
 
 \subsection{Fitting methods}
 
@@ -438,14 +441,24 @@ Instead, we propose that $\alpha$ should be interepreted as the strength of dens
 Smaller values of $\alpha$ captures stronger density dependence and faster saturation in the probability of infection.	
 Under this interpretation, it is clear that $\alpha$ should always be less than unity even in a homogeneously mixing population.
 Fitting the TSIR model to a simulated epidemic confirms this prediction (\fref{tsirpoi}B).
-For a single epidemic with $\mathcal R_0 = 2$, we estimate the optimal value for $\alpha$ to be 0.92 and $\hat{\beta}$ to be 3.9.
+For a single epidemic with $\mathcal R_0 = 2$, we estimate the optimal value for $\alpha$ to be 0.922 (95\% CI: 0.919 - 0.926) and $\hat{\beta}$ to be 3.90 (95\% CI: 3.79 - 4.01).
 
-Finally, high estimate of $\hat{\beta}$, in comparison to the true basic reproductive number $\mathcal R_0$, suggests that the raw estimate of the transmission rate $\hat{\beta}$ from the TSIR regression should not be taken as an estimate of the reproductive number.
+High estimate of $\hat{\beta}$, in comparison to the true basic reproductive number $\mathcal R_0$, suggests that the raw estimate of the transmission rate $\hat{\beta}$ from the TSIR regression should not be taken as an estimate of the reproductive number.
 Instead, we can translate this estimate to a transmission rate of a continuous-time SIR model by matching the estimated probability infection from the TSIR model, $\hat{\beta} i^\alpha/N$, with the hazard function, $1 - \exp(-\beta I/N)$, at mean incidence, $\bar{i}$, assuming that incidence and prevalence are equivalent:
 \begin{equation}
 \tsub{\beta}{continuous} \approx - \frac{N}{\bar{i}} \log \left(1 - \hat{\beta} \bar{i}^\alpha/N \right).
 \end{equation}
 Then, we get $\tsub{\beta}{continuous} = 2.1$, which is much closer to the true value.
+
+The original TSIR method included an exponent on the susceptibles as well:
+\begin{equation}
+\log i_{t + 1} = \log \beta_t + \gamma \log S_t + \alpha \log i_t - \log N_t + \epsilon_t.
+\end{equatino}
+$\gamma$ is unidentifiable when $\bar S$ is unknown.
+Here, we can estimate $\gamma$ as well because we know the true value of $\bar S$.
+When $\gamma$ as estimated, we get $\gamma = 0.978$ (95\% CI: 0.967 - 0.989), $\alpha = 0.926$ (95\% CI: 0.918 - 0.926) and $\beta = 4.93$ (95\% CI: \swp{Finish}).
+
+
 
 \subsection{Simulation study: comparison of statistical properties}
 

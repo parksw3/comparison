@@ -49,17 +49,22 @@ for (i in 1:nsim) {
 }
 
 ff <- fitlist %>% 
-	bind_rows(.id="sim")
+	bind_rows(.id="sim") %>%
+	mutate(N=N)
 
-lfit <- glm(log(Inew) ~ log(incidence) + offset(log(S)), data=ff)
+lfit <- glm(log(Inew) ~ log(incidence) + offset(log(S)) + offset(-log(N)), data=ff)
 
-fixfun(log(exp(coef(lfit)[1]) * N), coef(lfit)[2], N, ff$incidence)
+fixfun(coef(lfit)[1], coef(lfit)[2], N, ff$incidence)
+
+lfit2 <- glm(log(Inew) ~ offset(log(incidence)) + log(S) + offset(-log(N)), data=ff)
+
+fixfun(coef(lfit2)[1], coef(lfit2)[2], N, ff$incidence)
 
 g1 <- ggplot(ff) +
 	geom_point(aes(prevalence, POI), shape=".")  +
 	stat_function(fun=function(x) 1 - exp(- 2 * x/N), aes(col="Hazard approximation"), lwd=1) +
-	stat_function(fun=function(x) exp(coef(lfit)[1]) * x^coef(lfit)[2], aes(col="Power-law approximation"), lwd=1) +
-	scale_x_continuous("Prevalence", expand=c(0, 0)) +
+	stat_function(fun=function(x) exp(coef(lfit)[1]) * x^coef(lfit)[2]/N, aes(col="Power-law approximation"), lwd=1) +
+	scale_x_continuous(expression(Prevalence~(I[t])), expand=c(0, 0)) +
 	scale_y_continuous("Probability of infection", expand=c(0, 0)) +
 	theme(
 		legend.position = "none",
@@ -69,15 +74,26 @@ g1 <- ggplot(ff) +
 g2 <- ggplot(ff) +
 	geom_point(aes(incidence, POI), shape=".") +
 	stat_function(fun=function(x) 1 - exp(- 2 * x/N), aes(col="Hazard approximation"), lwd=1) +
-	stat_function(fun=function(x) exp(coef(lfit)[1]) * x^coef(lfit)[2], aes(col="Power-law approximation"), lwd=1) +
-	scale_x_continuous("Incidence", expand=c(0, 0)) +
+	stat_function(fun=function(x) exp(coef(lfit)[1]) * x^coef(lfit)[2]/N, aes(col="Power-law approximation"), lwd=1) +
+	scale_x_continuous(expression(Incidence~(i[t])), expand=c(0, 0)) +
 	scale_y_continuous("Probability of infection", expand=c(0, 0)) +
+	theme(
+		legend.title = element_blank(),
+		legend.position = c(0.63, 0.13), 
+		panel.grid = element_blank()
+	)
+
+g3 <- ggplot(ff) +
+	geom_point(aes(S, Inew/incidence), shape=".") +
+	stat_function(fun=function(x) exp(coef(lfit2)[1]) * x^coef(lfit2)[2]/N, lwd=1) +
+	scale_x_continuous(expression(Susceptible~(S[t])), expand=c(0,0)) +
+	scale_y_continuous(expression(i[t+1]/i[t]), expand=c(0,0)) +
 	theme(
 		legend.title = element_blank(),
 		legend.position = c(0.66, 0.15), 
 		panel.grid = element_blank()
 	)
+	
+gtot <- arrangeGrob(g1 + ggtitle("A"), g2 + ggtitle("B"), g3 + ggtitle("C"), nrow=1)
 
-gtot <- arrangeGrob(g1 + ggtitle("A"), g2 + ggtitle("B"), nrow=1)
-
-ggsave("tsir_poi.pdf", gtot, width=7, height=3)
+ggsave("tsir_poi.pdf", gtot, width=10, height=4)
