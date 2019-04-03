@@ -322,14 +322,36 @@ Here, we extend their models by relaxing this assumption and allowing for natura
 \begin{equation}
 \begin{aligned}
 B(t) &\sim \mathrm{Poisson}(b(t) \Delta t)\\
-\phi(t) &= \mathcal R(t) \sum_{k=1}^\ell i(t - k \Delta t) g(k \Delta t)\\
+\phi(t) &= \mathcal R(t) \sum_{k=1}^\ell i(t - (k-1) \Delta t) g(k \Delta t)\\
 F_{S}(t) &\sim \mathrm{Binomial}\left(S(t), 1 - e^{-(\phi(t) + \mu \Delta t)} \right)\\
 i(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(t) + \mu \Delta t} \right)\\
 S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
 \end{aligned}
 \end{equation}
+This model can be fitted using a Bayesian machine such as JAGS \citep{plummer2003jags}, NIMBLE \citep{de2017programming}, and Stan \citep{carpenter2017stan} (see \cite{li2018fitting} for comparison across these platforms).
 
+In order to make a fair comparison (without relying on a Bayesian prior), we take a further step to translate this model into a Markov process such that it can be used with particle filtering.
+We define a set of new state variables $j_1, j_2, \dots, j_\ell$ such that $j_k(t)$ corresponds to $i(t- (\ell-k) \Delta t)$.
+Then, we can rewrite the model as follows:
+\begin{equation}
+\begin{aligned}
+B(t) &\sim \mathrm{Poisson}(b(t) \Delta t)\\
+\phi(t) &= \mathcal R(t) \sum_{k=1}^\ell j_{\ell-k+1}(t) g(k \Delta t)\\
+F_{S}(t) &\sim \mathrm{Binomial}\left(S(t), 1 - e^{-(\phi(t) + \mu \Delta t)} \right)\\
+j_k(t+\Delta t) &= j_{k+1}(t) &k=1, 2, \dots, \ell-1\\
+j_\ell(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(t) + \mu \Delta t} \right)\\
+S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
+\end{aligned}
+\end{equation}
 
+We model the generation-interval distribution using a negative binomial distribution:
+\begin{equation}
+g(t) \propto t^{\tsub{G}{shape}} \exp(-t/\tsub{G}{scale}),
+\end{equation}
+where $g(t)$ is normalized to sum to one.
+For estimation purposes, we use an alternate parameterization $(\tsub{G}{mean}, \tsub{G}{var})$ such that $\tsub{G}{scale} = \tsub{G}{var}/\tsub{G}{mean}$ and $\tsub{G}{shape} = \tsub{G}{mean}/\tsub{G}{scale}$.
+For sufficiently small $\Delta t$, $\tsub{G}{mean}$ and $\tsub{G}{var}$ corresponds to mean and variance of the generation-interval distribution.
+Here, we use simulation time step $\Delta t$ of one-twentieth of the mean generation interval and $\ell = 120$; this allows the generation-interval distribution to span over 6 generations.
 
 \subsection{Splines}
 
