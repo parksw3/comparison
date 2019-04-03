@@ -40,6 +40,10 @@ global_max <- likelihood_data %>%
 	group_by(type) %>%
 	filter(logLik==max(logLik))
 
+plot(tsir_likelihood$alpha, tsir_likelihood$logLik)
+
+abline(h=max(tsir_likelihood$logLik)-qchisq(0.95, 1)/2)
+
 g1 <- ggplot(filter(likelihood_data, amount > 0)) +
 	geom_raster(aes(alpha, amount, fill=logLik)) +
 	stat_contour(data=filter(likelihood_data, type=="conditional"),
@@ -51,7 +55,7 @@ g1 <- ggplot(filter(likelihood_data, amount > 0)) +
 				 breaks=c(global_max$logLik[2]-qchisq(0.95, 2)/2),
 				 col="black", lty=2) +
 	geom_point(data=global_max, aes(alpha, amount), size=2, shape=1) +
-	scale_x_continuous(expand=c(0,0)) +
+	scale_x_continuous(expression(alpha), expand=c(0,0)) +
 	scale_y_continuous("Proportion of process variance", expand=c(0, 0), breaks=1:9/10) +
 	scale_fill_gradientn(colours=terrain.colors(10)) +
 	facet_wrap(~type) +
@@ -60,9 +64,4 @@ g1 <- ggplot(filter(likelihood_data, amount > 0)) +
 		panel.spacing = grid::unit(1, "cm")
 	)
 
-ggplot(filter(likelihood_data, amount == 0)) +
-	geom_line(aes(alpha, logLik)) +
-	facet_wrap(~type, scale="free")
-	
-
-
+ggsave("compare_conditional_likelihood.pdf", g1, width=8, height=3)

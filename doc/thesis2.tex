@@ -85,11 +85,11 @@ One must make an appropriate set of assumptions to balance generality, realism, 
 These assumptions may depend on a system as well as an inferential tool.
 Fortunately, a basic epidemic model, such as the Susceptible-Infected-Recovered (SIR) model can describe the measles dynamics sufficiently well \citep{earn2000simple, krylova2013effects, hempel2015century, dalziel2016persistent}.
 Focusing on a simple, well-understood model allows us to make a fair comparison between different statistical methods in their ability to estimate underlying parameters;
-If any changes have to be made to the model to apply a statistical tool, they will be relatively easy to understand and control.
+if any changes have to be made to the model to apply a statistical tool, they will be relatively easy to understand and control.
 Here, we focus on estimating the time-varying transmission rate of the SIR model.
 
 One way to estimate the transmission rate is by matching the deterministic trajectory of the system with the observed data by minimizing their ``distance'', often measured by the sum of squares difference or negative log-likelihood \citep{riley2003transmission, chowell2004basic}.
-This method of fitting a deterministic model (often referred to as trajectory matching) assumes that \emph{all} variation in data can be explained by observation error alone \citep{bolker2008ecological}.
+This method of fitting a deterministic model (often referred to as trajectory matching) effectively assumes that \emph{all} variation in data can be explained by observation error alone \citep{bolker2008ecological}.
 Likewise, it is possible to match gradients of the system \eref{sir} with the observed gradient, which can be estimated by fitting a smooth curve to a time series, such as piecewise polynomials, and taking its derivative \citep{ellner2002fitting}.
 These methods are computationally efficient and easy to implement.
 
@@ -97,10 +97,11 @@ Monte Carlo methods are computationally demanding but allow us to model \emph{al
 In particular, Sequential Monte Carlo methods (also known as particle filtering) has been successfully applied in mechanistic analyses of epidemic time series \citep{he2009plug, he2011mechanistic, didelot2017model}; its ability to approximate the likelihood through a series of simulations provides a powerful technique for testing hypotheses and inferring underlying parameters \citep{ionides2006inference, breto2009time, king2015statistical}.
 Approximate likelihood obtained by particle filtering can be maximized by iterated filtering \citep{ionides2011iterated, ionides2015inference} or can be incorporated into a Bayesian scheme as a particle Monte Carlo Markov Chain (MCMC) \citep{andrieu2010particle}.
 
-Unlike any of the previously discussed methods, which can be used to estimate parameters of a wide range of systems, the time series SIR (TSIR) method seeks to estimate time-varying transmission rates of fully-immunizing childhood infections, specifically \citep{finkenstadt2000time}.
+Unlike any of the previously discussed methods, which can be used to estimate parameters of a wide range of systems, the time series SIR (TSIR) method seeks to estimate time-varying transmission rates of fully immunizing childhood infections, specifically \citep{finkenstadt2000time}.
 The TSIR method first estimates the dynamics of the susceptible population based on the assumption that all individuals eventually become infected;
 conditional on the estimated susceptible dynamics, transmission rates can be estimated using a regression. 
 Even though the TSIR method is designed to tackle a specific kind of problems, it has been consistently used since its introduction.
+\swp{Add more.}
 So what makes it work so well?
 
 \swp{Come back}
@@ -172,7 +173,7 @@ For all other purposes, we use the incidence time series throughout this study.
 
 \subsubsection*{Time-series SIR model}
 
-The time-series SIR (TSIR) method was developed by \cite{bjornstad2002dynamics} to estimate seasonally varying transmission rates of measles.
+The time-series SIR (TSIR) method was developed by \cite{finkenstadt2000time} to estimate seasonally varying transmission rates of measles.
 The TSIR method begins by discretizing the infection process of the SIR model, assuming that disease generation time is equal to reporting interval:
 \begin{equation}\label{eq:tsir_dynamics}
 \begin{aligned}
@@ -180,91 +181,105 @@ S_{t+1} &= B_t + S_t - i_{t+1}\\
 i_{t+1} &= \beta_t S_t \frac{i_t^\alpha}{N_t}
 \end{aligned}
 \end{equation}
-where $\alpha$ is often referred to as a conversion factor from a continuous-time model to a discrete-time model or a heterogeneity parameter \citep{glass2003interpreting}.
+where $\alpha$ is often referred to as a conversion factor for discretization of a system or inhomogeneity \citep{liu1986influence, bjornstad2002dynamics, glass2003interpreting}.
 Taking log on both sides, estimation of the transmission rates $\beta_t$ becomes a regression problem:
 \begin{equation}\label{eq:tsir}
 \log i_{t + 1} = \alpha \log \beta_t + \log S_t + \alpha \log i_t - \log N_t + \epsilon_t.
 \end{equation}
 
-A key assumption behind the TSIR model is that all, if not most, individuals become infected eventually.
+A key assumption behind the TSIR model is that all, if not most, individuals become infected eventually \citep{finkenstadt2000time}.
 In other words, the total number of births should be equal to the total number of cases over a long period of time.
 Rewriting true incidence $i_t$ as a product of reported cases $i_{t, {\tiny \textrm{rep}}}$ and reciprocal of reporting rate $1/\rho_t$ and iteratively solving \eref{tsir_dynamics}, we get
 \begin{equation}
 \sum_{t=1}^N B_t = \sum_{t=1}^N \frac{i_{t, {\tiny \textrm{rep}}}}{\rho_{t+1}} + Z_{t+1} - Z_1,
 \end{equation}
 where $Z_t = S_t - \bar{S}$.
-Under this assumption, fitting a regression model to cumulative birth as a function of cumulative cases allows us to estimate time-varying reporting rate $\rho_t$ from the recirpocal of the slope and susceptible dynamics $Z_t$ from the residuals \citep{finkenstadt2000time}.
-Conditional on the known susceptible dynamics, we can apply the TSIR regression \label{eq:tsir} to epidemic time series.
+Under this assumption, fitting a regression model to cumulative birth as a function of cumulative cases allows us to estimate time-varying reporting rate $\rho_t$ by taking the reciprocal of the slope and susceptible dynamics $Z_t$ from the residuals \citep{finkenstadt2000time}.
+Conditioning on the known susceptible dynamics, we can apply the TSIR regression \label{eq:tsir} to epidemic time series to estimate the time-varying transmission rate.
 
 \subsubsection*{Trajectory matching}
 
 Trajectory matching is a way of estimating underlying parameters of an ODE model by matching the observed time series and a deterministic solution of the model.
-Given observed incidence $i_{t, {\tiny \textrm{rep}}}$ (or equivalently, observed prevalence or mortality cases), we can define its mean dynamics using the solution of the SIR model:
+Given observed incidence $i_{t, {\tiny \textrm{rep}}}$ (or equivalently, observed prevalence or mortality), we can define its expected dynamics using the solution of the SIR model:
 \begin{equation}
-\mu_t = \frac{i_t}{\rho} = \frac{1}{\rho} \int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds.
+\mu_t = \rho i_t = \rho \int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds,
 \end{equation}
-Since it is difficult to integrate of the state-space, we include another state variable $C$ that represents cumulative incidence where $dC/dt = \beta SI/N$ and numerically solve for $C$ by integrating alongside the SIR model; taking the difference in $C$ between two consecutive reporting periods allows us to obtain true $i_t$.
-Finally, the likelihood of observing the data can be defined as a deviation from this mean trajectory:
+where $\rho$ is the mean reporting rate.
+Directly computing this integral is practically infeasible. 
+Instead, we can include an extra state variable $C$ which represents cumulative number of cases to the SIR model: $dC/dt = \beta SI/N$.
+True incidence can be calculated by taking the difference of $C$ between to consecutive reporting periods.
+Then, we get
+\begin{equation}
+\mu_t = \rho (C(t) - C(t-\tsub{t}{rep})).
+\end{equation}
+Finally, the observation likelihood can be defined as a deviation from this mean trajectory:
 \begin{equation}
 i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}(\mu_t, \tsub{\phi}{obs}),
 \end{equation}
-where $\tsub{\phi}{obs}$ is the negative binomial dispersion parameter.
+where $\tsub{\phi}{obs}$ is the dispersion parameter of a negative binomial distribution.
+
+\swp{Maybe come back.}
 
 \subsubsection*{Gradient matching}
 
-Gradient matching is a way of estimating underlying parameters of an ODE model by matching the gradients of a system, rather than the deterministic solution of the system \citep{ellner2002fitting}.
-Gradient matching provides a flexible way of modeling a system as it does not require the parameteric form of the rate equations to be pre-specified (e.g., we do not need to that per-capita rate of transmission is a linear function of $I$).
-Instead, parameters can be estimated by fitting a non-parametric regression model to the ``observed gradients'' as a function of state variables that are relevant.
+Like trajectory matching, gradient matching seeks to find a set of parameters such that the gradient of an ODE model matches the observed gradient \citep{ellner2002fitting}.
+Gradient matching provides a flexible way of modeling a system as it does not require the parametric form of the rate equations to be pre-specified (e.g., we do not need to assume that per-capita rate of transmission is a linear function of $I$).
+Instead, parameters can be estimated by fitting a non-parametric regression model to the observed gradient as a function of relevant state variables.
 Therefore, all state variables must be observed in order to apply gradient matching.
 
-In practice, it is impossible to observe all state variables of an epidemic model, even for simple models such as the SIR model.
-When either incidence or mortality cases are reported, \emph{no} state variables are observed.
+In practice, it is difficult to observe all state variables of an epidemic model, even for simple models such as the SIR model.
+When either incidence or mortality are reported, \emph{no} relevant state variables are observed.
 Nonetheless, it is still possible to estimate the transmission rates of the SIR model using gradient matching by making similar assumptions as the TSIR model.
-Here, we briefly outline the estimation process; note that the purpose of section is to introduce the method, rather than to provide a rigorous justification of the statistical model.
+Here, we briefly outline the estimation process;
+note that the purpose of this section is to introduce the method, rather than to provide a rigorous justification of the statistical model.
 
-First, we begin by assuming that the mean generation time is equal to the length of reporting period and that incidence is proportional to prevalence, i.e., $i_t = a I_t$ for some $a > 0$. 
-Note that this is a weaker assumption than the condition for the TSIR method.
+First, we begin by assuming that the mean generation time is equal to the length of reporting time step and that incidence is proportional to prevalence, i.e., $i_t = a I_t$ for some $a > 0$. 
+This assumption is slightly weaker than the conditions for the TSIR method.
 We then fit a smooth curve $f(t)$ to log reported incidence $\log i_{t, {\tiny \textrm{rep}}}$:
 \begin{equation}
 \log i_{t, {\tiny \textrm{rep}}} \sim \mathrm{Normal}\left(f(t), \tsub{\sigma}{smooth}^2 \right),
 \end{equation}
-where natural cubic splines are used to model the function $f$ \swp{CITE spline package}.
-Basis knots are placed every 6 generations.
+where natural cubic splines are used to model the function $f$.
+For the purpose of estimating time-varying transmission rates, placing basis knots every 6 generations appear to be sufficient \swp{Appendix}.
 
 The smooth curve $f(t)$ represents the dynamics of the log of prevalence ($\log I_t$) up to a constant.
-Taking the derivative of the curve $f(t_i)$, we have an estimate of the derivative of the log of prevalence:
+When we take the derivative of the curve $f(t_i)$, we get an estimate of the derivative of the log of prevalence:
 \begin{equation}
-E\left[\frac{df(t)}{dt}\right] = \beta S - (\gamma + \mu).
+E\left[\frac{df(t)}{dt}\right] = \beta(t) S - (\gamma + \mu),
 \end{equation}
-There are several ways we can estimate the transmission rate using this equation.
+where the unobserved dynamics of the susceptible $S$ can be inferred from the susceptible reconstruction of the TSIR method.
+There are several ways we can estimate the transmission rate from this equation.
 First, we can model transmission rate as a function of susceptibles $S$ by fitting a non-parametric regression by treating known values of $\gamma$ and $\mu$ as offset terms:
 \begin{equation}
 \frac{df(t)}{dt} \sim \mathrm{Normal}(g(S_t) - (\gamma + \mu), \sigma^2),
 \end{equation}
-where $g$ is a non-parametric function that represents the transmission rate and the unobserved susceptible population $S_t$ can be estimated from susceptible reconstruction.
+where $g$ is a non-parametric function that represents the transmission rate.
 When transmission varies over time, we can either (1) model transmission rate as an interaction term between a factor variable that represents time of the year and a smoothing term (i.e., fit a separate nonparametric curve $g$ for each factor level) or try to separate transmission rate from the susceptible dynamics using a log link function:
 \begin{equation}
 \frac{d f(t)}{dt} + (\gamma + \mu) \sim \mathrm{Normal}\left(\exp \left(\log \beta_t + \log S_t\right), \sigma^2\right),
 \end{equation}
 where log number of susceptible individuals $\log S_t$ is treated as an offset term and the log transmission rate can be estimated is estimated as a function of time of year using a nonparametric regression.
+Here, we mainly focus on the last method.
 
 \subsubsection*{Sequential Monte Carlo}
 
-Calculating the exact likelihood for a nonlinear stochastic system is practically impossible.
-Instead, Sequential Monte Carlo (particle filtering) allows the likelihood to be approximated via simulations.
+Calculating the exact likelihood of a nonlinear stochastic system is practically impossible.
+Instead, Sequential Monte Carlo (also known as particle filtering) allows the likelihood to be approximated via simulations \citep{doucet2001introduction, arulampalam2002tutorial}.
 Let $X_t = \{\mathbf{x}_{t, i} \,|\, i= 1, 2, \dots, n\}$ be the set of states (particles) at time $t$ and $h$ be the process model.
-For the SIR model, each particle $\mathbf{x}_{t, i} \in X$ consists of number of susceptible individuals $S_t$ and number of infected individuals $I_t$.
-Then, we can predict the states at next time step $t+1$ for each particle using the process model: $h(\mathbf{x}_{t, i})$.
+For the SIR model, each particle $\mathbf{x}_{t, i} \in X$ will consist of the number of susceptible individuals $S_t$ and the number of infected individuals $I_t$.
+Then, we can predict the state of each particle at next time reporting step $t+1$ using the process model: $h(\mathbf{x}_{t, i})$.
+Note that it may take several \emph{simulation} time steps to get to the next reporting time step.
 For each prediction $h(\mathbf{x}_{t, i})$, we can calcuate the likelihood $w_{t,i}$ of the observation at time $t+1$ and define marginal likelihood by taking the average: $\bar{w}_t$.
-Finally, we draw $n$ weighted samples from the set $\{h(\mathbf{x}_{t, i}) \,|\, i = 1=2, \dots, n\}$, where the weight of each $h(\mathbf{x}_{t, i})$ is proportional to $w_i$, to obtain the next set of particles $X_{t+1}$.
-This algorithm is repeated until the final time step.
-Then, complete likelihood of the data is given by the product of the marginal likelihood at each time step: $\prod \bar{w}_{t}$.
+Then, drawing $n$ weighted samples from the set $\{h(\mathbf{x}_{t, i}) \,|\, i = 1=2, \dots, n\}$, where the weight of each $h(\mathbf{x}_{t, i})$ is proportional to $w_i$, yields the next set of particles $X_{t+1}$.
+This algorithm can be repeated until the final reporting time step.
+Finally, the complete likelihood of the data is given by the product of the marginal likelihood at each time step: $\prod \bar{w}_{t}$.
 
-While Sequential Monte Carlo provides a powerful technique for approximating the likelihood, it is still impractical to fit a continuous-time stochastic model. 
-For example, it can take more than \swp{10} hours to simulate an 20-year-long measles time series with gillespie algorithm. 
-Computing a likelihood with Sequential Monte Carlo would take more than a few days, let alone maximizing the likelihood.
+While Sequential Monte Carlo provides a straightforward way of approximating the likelihood for any process model that can be defined, it is still difficult fit a continuous-time stochastic model. 
+For example, it can take as long as 10 hours to simulate a measles times series for 20 years with a gillspie algorithm.
+Computing a likelihood with large number of particles will take more than a few days; 
+maximizing the likelihood will be practically impossible.
 
-Instead of fitting a continuous-time model, we can assume that an epidemic process is a partially observed discrete-time Markov process and discretize the system by using a hazard approximation of the transition probabilities between states:
+Instead of fitting a continuous-time model, we can assume that an epidemic process is a partially observed discrete-time Markov process and discretize the system by using a hazard approximation to the transition probabilities between states:
 \begin{equation}
 \begin{aligned}
 B(t) &\sim \mathrm{Poisson}(b(t) \Delta t)\\
@@ -277,32 +292,33 @@ C(t+\Delta t) &= C(t) + F{S,I}(t)\\
 \end{aligned}
 \end{equation}
 where $r_1 = \beta I/N$, $r_3 = \gamma$, and $r_2 = r_4 = \mu$.
-Random variables $F_S(t)$ and $F_I(t)$ represent the total number of individuals that move out from susceptible $S$ and infected $I$ states. Likewise, $F_{S, I}(t)$ represent the total number of individual move from susceptible state $S$ to infected state $t$.
+$\Delta t$ represents simulation time step; as $\Delta t \to 0$, this model converges to a Gillespie simulation.
+Random variables $F_S(t)$ and $F_I(t)$ represent the total number of individuals that move out from susceptible $S$ and infected $I$ states. 
+Likewise, $F_{S, I}(t)$ represent the total number of individual move from susceptible state $S$ to infected state $t$.
 Finally, the state variable $C(t)$ keeps track of cumulative incidence.
-Again, observation likelihood is defined using a negative-binomial distribution:
+Again, we define observation likelihood using a negative-binomial distribution:
 \begin{equation}
 i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}(\rho (C(t) - C(t - \tsub{t}{rep})) , \tsub{\phi}{obs}).
 \end{equation}
 
 \subsubsection*{Renewal equation}
 
-Previously discussed models assume that the shape of generation-interval distribution is exactly known.
-The continuous time SIR model assumes that generation intervals are exponentially distributed.
+Many standard compartmental models, such as the SIR model, assume that the shape of generation-interval distribution is known exactly.
+The continuous-time SIR model assumes that generation intervals are exponentially distributed.
 The discrete-time SIR model represented as a partially observed Markov process assumes that generation intervals are geometrically distributed.
-Finally, the TSIR assumes that generation intervals are fixed.
-All these assumptions are unrealistic; we expect a realistic generation-interval distribution of measles to be narrow but not fixed.
+Finally, the TSIR model assumes that generation intervals are fixed.
+We expect a realistic generation-interval distribution of measles to be narrower than exponential but not fixed.
+While it is possible to use differently shaped generation-interval distributions by incrementing the number of compartments used for each state, the number of compartments has to be specified prior to model fitting.
 
-It is possible to relax the assumption on generation-interval distribution of the SIR model by including a latent period and allowing for infectious and latent periods to have multiple stages.
-However, the number of stages (compartments) in each state must be predetermined before parameter estimation is performed.
-Instead, we can model true incidence as a function of previous incidence and generation-interval distributions explicitly via the renewal equation:
+Instead, renewal equation allows us to model incidence as a function of a previous incidence and generation-interval distributions explicitly:
 \begin{equation}
 i(t) = \mathcal R_0 S(t) \int_0^t g(t-s) i(s) ds,
 \end{equation}
 where $i(t)$ represents incidence, $S(t)$ represents number of susceptible individuals, $g(t)$ represents generation-interval distribution and $\mathcal R_0$ represents the basic reproductive number.
-Because this model generalizes the compartmental models with Erlang distributed latent and infectious periods, including the standard SIR model \citep{champredon2018equivalence}, we expect this model to perform better in analyzing time series of outbreaks.
+Because the renewal equation generalizes the compartmental models with Erlang distributed latent and infectious periods (i.e., models with multiple latent and infectious compartments), including the standard SIR model \citep{champredon2018equivalence}, we expect this model to perform better in analyzing time series of outbreaks.
 
-Previous studies used a discrete time version of the renewal equation model to analyze Ebola epidemics but assumed that the simulation time step was equal to the reporting time step \citep{li2018fitting, champredon2018two}. 
-Here, we extend their model by simulating the epidemic on a finer scale and allowing for natural birth and death in the susceptible population:
+Previous studies used a discrete time version of the renewal equation model to analyze Ebola epidemics but assumed that the simulation time step was equal to the reporting time step \citep{li2018fitting, champredon2018two}.
+Here, we extend their models by relaxing this assumption and allowing for natural birth and death in the susceptible population:
 \begin{equation}
 \begin{aligned}
 B(t) &\sim \mathrm{Poisson}(b(t) \Delta t)\\
@@ -312,6 +328,8 @@ i(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(t) + 
 S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
 \end{aligned}
 \end{equation}
+
+
 
 \subsection{Splines}
 
@@ -453,7 +471,7 @@ Then, we get $\tsub{\beta}{continuous} = 2.1$, which is much closer to the true 
 The original TSIR method included an exponent on the susceptibles as well:
 \begin{equation}
 \log i_{t + 1} = \log \beta_t + \gamma \log S_t + \alpha \log i_t - \log N_t + \epsilon_t.
-\end{equatino}
+\end{equation}
 $\gamma$ is unidentifiable when $\bar S$ is unknown.
 Here, we can estimate $\gamma$ as well because we know the true value of $\bar S$.
 When $\gamma$ as estimated, we get $\gamma = 0.978$ (95\% CI: 0.967 - 0.989), $\alpha = 0.926$ (95\% CI: 0.918 - 0.926) and $\beta = 4.93$ (95\% CI: \swp{Finish}).
