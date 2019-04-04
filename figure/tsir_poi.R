@@ -56,7 +56,9 @@ lfit <- glm(log(Inew) ~ log(incidence) + offset(log(S)) + offset(-log(N)), data=
 
 fixfun(coef(lfit)[1], coef(lfit)[2], N, ff$incidence)
 
-lfit2 <- glm(log(Inew) ~ offset(log(incidence)) + log(S) + offset(-log(N)), data=ff)
+lfit2 <- glm(log(Inew) ~ log(incidence) + log(S) + offset(-log(N)), data=ff)
+
+lfit3 <- glm(log(Inew) ~ offset(log(incidence)) + log(S) + offset(-log(N)), data=ff)
 
 fixfun(coef(lfit2)[1], coef(lfit2)[2], N, ff$incidence)
 
@@ -84,10 +86,10 @@ g2 <- ggplot(ff) +
 	)
 
 g3 <- ggplot(ff) +
-	geom_point(aes(S, Inew/incidence), shape=".") +
-	stat_function(fun=function(x) exp(coef(lfit2)[1]) * x^coef(lfit2)[2]/N, lwd=1) +
+	geom_point(aes(S, Inew/incidence^0.9226), shape=".") +
+	stat_function(fun=function(x) exp(coef(lfit2)[1]) * x^coef(lfit2)[3]/N, lwd=1) +
 	scale_x_continuous(expression(Susceptible~(S[t])), expand=c(0,0)) +
-	scale_y_continuous(expression(i[t+1]/i[t]), expand=c(0,0)) +
+	scale_y_continuous(expression(i[t+1]/i[t]^alpha), expand=c(0,0)) +
 	theme(
 		legend.title = element_blank(),
 		legend.position = c(0.66, 0.15), 

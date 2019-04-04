@@ -83,7 +83,7 @@ For example, we now know that the complex dynamics of measles outbreaks are driv
 Major challenges in epidemiological modeling come from developing the actual model and parameterizing it.
 One must make an appropriate set of assumptions to balance generality, realism, and precision \citep{levins1966strategy}.
 These assumptions may depend on a system as well as an inferential tool.
-Fortunately, a basic epidemic model, such as the Susceptible-Infected-Recovered (SIR) model can describe the measles dynamics sufficiently well \citep{earn2000simple, krylova2013effects, hempel2015century, dalziel2016persistent}.
+Fortunately, a simple epidemic model, such as the Susceptible-Infected-Recovered (SIR) model can describe the measles dynamics sufficiently well \citep{earn2000simple, krylova2013effects, hempel2015century, dalziel2016persistent}.
 Focusing on a simple, well-understood model allows us to make a fair comparison between different statistical methods in their ability to estimate underlying parameters;
 if any changes have to be made to the model to apply a statistical tool, they will be relatively easy to understand and control.
 Here, we focus on estimating the time-varying transmission rate of the SIR model.
@@ -343,6 +343,7 @@ j_\ell(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(
 S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
 \end{aligned}
 \end{equation}
+\swp{Write down likelihood}
 
 We model the generation-interval distribution using a negative binomial distribution:
 \begin{equation}
@@ -351,45 +352,48 @@ g(t) \propto t^{\tsub{G}{shape}} \exp(-t/\tsub{G}{scale}),
 where $g(t)$ is normalized to sum to one.
 For estimation purposes, we use an alternate parameterization $(\tsub{G}{mean}, \tsub{G}{var})$ such that $\tsub{G}{scale} = \tsub{G}{var}/\tsub{G}{mean}$ and $\tsub{G}{shape} = \tsub{G}{mean}/\tsub{G}{scale}$.
 For sufficiently small $\Delta t$, $\tsub{G}{mean}$ and $\tsub{G}{var}$ corresponds to mean and variance of the generation-interval distribution.
-Here, we use simulation time step $\Delta t$ of one-twentieth of the mean generation interval and $\ell = 120$; this allows the generation-interval distribution to span over 6 generations.
+Here, we use a simulation time step $\Delta t$ of one-twentieth of the mean generation interval and $\ell = 120$; this allows the generation-interval distribution to span over 6 generations.
 
 \subsection{Splines}
 
-In order to estimate time-varying transmission rates as a smooth function of time, we model transmission rate $\beta(t)$ using a spline function \citep{hooker2010parameterizing}:
+In order to estimate time-varying transmission rates as a smooth function of time, we model transmission rate $\beta(t)$ using a spline \citep{hooker2010parameterizing}:
 \begin{equation}
 \beta(t) = \sum_{i=1}^k \phi_i(t) b_i,
 \end{equation}
 where each $\phi_i$ is a cyclic cubic B-spline basis and $b_i$ is the corresponding coefficient.
 Here, we fix knot locations at every two biweeks (1/13 years);
-this parameterization results in almost a two-fold reduction in the number of parameters to be estimated compared to the regular TSIR procedure, which estimates a separate transmission rate for every biweek.
+this parameterization results in almost a two-fold reduction in the number of parameters to be estimated compared to the regular TSIR procedure, which tries to estimate a separate transmission rate at every biweek.
 For regression-based methods (TSIR and gradient matching), we allow the number of knots to be estimated within the regression method by the Restricted Maximum Likelihood (REML) approach \citep{wood2012mgcv}.
 
 \section{Results}
 
-\subsection{Types of time series}
+\subsection{Types of epidemic time series}
 
-When reporting period is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
-Indeed, for the simple SIR model \eref{sir}, it can be shown that incidence, prevalence, and mortality are similar to each other under Euler approximation when reporting period is equal to mean generation time (see Appendix).
+When reporting step is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
+In fact, we can show that incidence, prevalence, and mortality are nearly equivalent for simple SIR model \eref{sir} under Euler approximation when reporting step is equal to mean generation time (see Appendix).
 Their deterministic dynamics are sufficiently similar that we expect these three reports to be nearly indistinguishable from each other when demographic stochasticity and observation error is introduced.
-However, this is not necessarily true for more complicated models.
-For a more realistic model with exposed period (SEIR model), incidence is similar to prevalence when reporting period is equal to mean \emph{generation time} whereas mortality is similar to prevalence when reporting period is equal to mean \emph{infectious period}. \swp{TODO: confirm}
+However, this is not true for more complicated models.
+For a more realistic model with an exposed period (SEIR model), the incidence is comparable to prevalence when reporting time step is equal to mean \emph{infectious period} rather than mean \emph{generation time}.
+We are not able to see this distinction in the SIR model because it assumes that the mean infectious period is equal mean generation interval.
+For now, we focus on the SIR model. 
+\swp{We revisit this point in Discussion.}
 
 \begin{figure}[!ht]
 \includegraphics[width=\textwidth]{../figure/compare_profile_likelihood.pdf}
 \caption{
 \textbf{Comparison of incidence, prevalence, and mortality from dynamical and estimation perspective.}
-A: dynamics of incidence, mortality and prevalence of the SIR model for a single outbreak (no natural birth/death and fixed transmission rate) when mean generation time ie equal to reporting period.
+A: deterministic dynamics of incidence, mortality, and prevalence of the SIR model for a single outbreak (no natural birth/death and fixed transmission rate) when mean generation time is equal to reporting step.
 The parameters and initial conditions are $\beta = 2$, $\gamma = 1$, $N = 1 \times 10^5$, $I(0) = 10$, and $S(0) = N - 10$.
-B: dynamics of incidence, mortality and prevalence of the SIR model with sinusoidal transmission rate ($\beta(t) = b_0 (1 + b_1 \cos (2 \pi t/26))$) when mean generation time ie equal to reporting period.
+B: dynamics of incidence, mortality and prevalence of the SIR model with sinusoidal transmission rate ($\beta(t) = b_0 (1 + b_1 \cos (2 \pi t/26))$) when mean generation time ie equal to reporting step.
 The parameters and initial conditions are $b_0 = 500/26$, $b_1 = 0.15$, $\gamma = 1$, $\mu = 1/(50 \times 26)$, $N = 5 \times 10^6$, $I(0) = 0.0001 N$, $S(0) = 0.05 N$.
-C, D, E: deviance difference (profile likelihood minus the maximum likelihood) of each parameters when incidence, mortality, and prevalence are fit to same time series using trajectory matching. 
+C, D, E: deviance difference (profile likelihood minus the maximum likelihood) of each parameter when incidence, mortality, and prevalence are fit to same time series using trajectory matching. 
 Grey dashed line represents the true value.
 } 
 \label{fig:incidence}
 \end{figure}
 
-Even if incidence, mortality, and prevalence are expected to be exhibit similar dynamics other when reporting period is equal to mean generation time, it is important to distinguish them when we are estimating underlying parameters of the SIR model, especially when mean generation time $1/\gamma$ is not exactly known.
-To demonstrate this idea, we first simulate an epidemic time series representing prevalence over time by solving the SIR model numerically and calculating prevalence, $I(t)$, for 20 reporting periods, where reporting period is equal to the mean generation time. Then, we draw a beta-binomial random variable at each time step with a reporting rate of 70\% and an overdispersion parameter of 10.
+Even if incidence, mortality, and prevalence are expected to be exhibit similar dynamics when reporting period is equal to mean generation time, it is important to distinguish them when we are estimating underlying parameters of the SIR model, especially when mean generation time $1/\gamma$ is not exactly known.
+To demonstrate this idea, we first simulate an epidemic time series representing prevalence over time by solving the deterministic SIR model numerically and calculating prevalence, $I(t)$, for 20 reporting periods, where reporting period is equal to the mean generation time. Then, we draw a beta-binomial random variable at each time step with a reporting rate of 70\% and an overdispersion parameter of 10.
 Using this time series, we try to estimate four parameters -- transmission rate $\beta$, recovery rate $\gamma$, reporting rate $\rho$, and an initial number of infected individuals $I(0)$ -- by treating the same time series as if it were incidence, mortality, and prevalence report (\fref{incidence}).
 
 We find that fitting prevalence and mortality curves to the same time series yields almost identical estimates of the transmission rate $\beta$ and the recovery rate $\gamma$ (as well as related uncertainty in the estimates) whereas fitting incidence and mortality curves to the same time series yields consistent estimates of the reporting rate $\rho$  (as well as related uncertainty in the estimates).
@@ -697,7 +701,5 @@ Then, we can obtain a relationship between $\mathcal R$ of a discrete-time syste
 \end{equation}
 
 On the other hand, we may want to match choose $\beta$ and $\mu$ to match true $r$ and $\mathcal R$.
-
-
 
 \end{document}
