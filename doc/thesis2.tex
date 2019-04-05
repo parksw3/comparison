@@ -392,66 +392,71 @@ Grey dashed line represents the true value.
 \label{fig:incidence}
 \end{figure}
 
-Even if incidence, mortality, and prevalence are expected to be exhibit similar dynamics when reporting period is equal to mean generation time, it is important to distinguish them when we are estimating underlying parameters of the SIR model, especially when mean generation time $1/\gamma$ is not exactly known.
+Even if incidence, mortality, and prevalence exhibit similar dynamics when reporting step is equal to mean generation time, it is important to distinguish them when we are trying to estimate underlying parameters of the SIR model, especially when mean generation time $1/\gamma$ is not exactly known.
 To demonstrate this idea, we first simulate an epidemic time series representing prevalence over time by solving the deterministic SIR model numerically and calculating prevalence, $I(t)$, for 20 reporting periods, where reporting period is equal to the mean generation time. Then, we draw a beta-binomial random variable at each time step with a reporting rate of 70\% and an overdispersion parameter of 10.
 Using this time series, we try to estimate four parameters -- transmission rate $\beta$, recovery rate $\gamma$, reporting rate $\rho$, and an initial number of infected individuals $I(0)$ -- by treating the same time series as if it were incidence, mortality, and prevalence report (\fref{incidence}).
 
-We find that fitting prevalence and mortality curves to the same time series yields almost identical estimates of the transmission rate $\beta$ and the recovery rate $\gamma$ (as well as related uncertainty in the estimates) whereas fitting incidence and mortality curves to the same time series yields consistent estimates of the reporting rate $\rho$  (as well as related uncertainty in the estimates).
-As mortality is approximately a lagged reflection of prevalence regardless of reporting period (reported mortality case at time $t$ is approximately equal to $\rho \gamma I(t-\tsub{t}{rep}) \tsub{t}{rep}$), 
-it is possible to generate a mortality curve that matches its corresponding prevalence curve by adjusting the reporting rate $\rho$.
-This explains why estimates of dynamical parameters, $\beta$ and $\gamma$, are similar whether we treat the same time series as prevalence or mortality.
-On the other ahnd, incidence report no longer matches prevalence report when reporting period is not equal to the mean generation time (i.e., when $\gamma$ is being estimated); therefore, fitting incidence curve yields a different estimate of the dynamical parameters, $\beta$ and $\gamma$, from fitting mortality or prevalence curves.
+We find that fitting prevalence and mortality curves to the same time series yields almost identical estimates of the transmission rate $\beta$ and the recovery rate $\gamma$ (as well as related uncertainty in the estimates) whereas fitting incidence and mortality curves to the same time series yields consistent estimates of the reporting rate $\rho$.
+As mortality always behaves like prevalence regardless of reporting period (reported mortality case at time $t$ is approximately equal to $\rho \gamma I(t-\tsub{t}{rep}) \tsub{t}{rep}$),
+it is possible to generate a mortality curve that matches its corresponding prevalence curve by adjusting the reporting rate of $\rho$.
+This explains why estimates of dynamical parameters, $\beta$ and $\gamma$, are similar whether we fit prevalence or mortality.
+On the other hand, incidence report no longer matches prevalence report when reporting period is not equal to the mean generation time (i.e., when $\gamma$ is being estimated); therefore, fitting incidence curve yields a different estimate of the dynamical parameters, $\beta$ and $\gamma$, from fitting mortality or prevalence curves.
 Fitting incidence and mortality curve yields similar estimates of the reporting rate $\rho$ because they both contain equivalent information about the final size of an epidemic: total \emph{true} incidence and total \emph{true} mortality is equal to the final size of an epidemic.
 
-Even when mean generation time is exactly known, we find that estimates of transmission rate $\beta$ and reporting rate $\rho$ depends on our assumptions about the data.
+Even when mean generation time is exactly known, we find that estimates of transmission rate $\beta$ and reporting rate $\rho$ depends on our assumptions about the time series.
 We find that fitting mortality and prevalence yields consistent estimates of both $\beta$ and $\rho$ in this case, whereas fitting incidence yields similar but still different estimates.
-Treating incidence report as prevalene report (and vice versa) should be avoided.
-
-\swp{Say something more}
+Treating incidence report as prevalence report (and vice versa) should be avoided.
+\swp{Appendix; come back}
 
 \subsection{Susceptible reconstruction}
 
-One of the main assumptions behind the TSIR model is that the dynamics susceptible population $S_t$ must be known.
-Assuming that all newborn infants become infected eventually, it is possible to recover the reporting rate, $\rho_t$, as well as the dynamics of the susceptible population as a deviation from its mean, $Z_t = S_t - \bar{S}$, by fitting a regression model to between cumulative births and cumulative cases: 
+One of the main assumptions behind the TSIR method is that the dynamics susceptible population $S_t$ is exactly known.
+Assuming that all individuals that enter the susceptible population become infected eventually, it is possible to recover the reporting rate, $\rho_t$, as well as the dynamics of the susceptible population as a deviation from its mean, $Z_t = S_t - \bar{S}$, by fitting a regression model between cumulative births and cumulative cases: 
 \begin{equation}
 \sum_{t=1}^N B_t = \sum_{t=1}^N \frac{C_{t+1}}{\rho_{t+1}} + Z_{t+1} - Z_1,
 \end{equation}
-where $C_t$ is the number of observed cases. 
-Then, the mean susceptible population $\bar S$ can be estimated using profile likelihood with the TSIR regression.
+where $C_t$ is the number of observed cases: $C_t = \rho_t i_t$.
+Then, the reporting rate $\rho_t$ can be estimated from the slope of the regression and the susceptible dynamics can be estimated from the residuals \citep{finkenstadt2000time}. 
 
-While this method of reconstructing the susceptible dynamics has been successfully used with the TSIR method, 
-several questions remain to be answered.
-First, how sensitive is our inference to regression methods?
-Second, does $Z_t$ represent deviation from the overall population mean $\bar{S}$ or from some sort of moving average (assuming that population changes over time)?
-Likewise, how does changes in population size or reporting rate over time affect our estimate of $\rho_{t+1}$ or $Z_t$?
-Finally, how do assumptions about the population size affect estimate of the transmission rate?
-
-\begin{figure}
+\begin{figure}[!t]
 \includegraphics[width=\textwidth]{../figure/susceptible_reconstruction_tsir.pdf}
 \caption{
-\swp{TODO}
+\textbf{Sensitivity of estimates of reporting rate and susceptible dynamics to regression methods.}
+Susceptible reconstruction is performed on a simulated time series (thick grey lines represent the true values).
+Although estimates of the reporting rates are highly sensitive to regression methods, susceptible dynamics can be robustly estimated.
 }
 \label{fig:tsirrecon}
 \end{figure}
 
-We first simulate an epidemic using the continuous deterministic SIR model for 10 years and apply 5 different regression models available from the \texttt{tsiR} package to test their ability to infer reporting rate and susceptible dynamics (\fref{transmission}).
-We find that estimates of transmission rates are highly sensitive to regression methods.
-The gaussian regression is particularly inaccurate in boundaries.
-Other methods provide similar estimates.
-In general, estimates of susceptible dynamics appear to be robust regardless of the regression method.
+While the susceptible reconstruction has been successfully used with the TSIR method, 
+several minor questions remain to be answered.
+First, how sensitive is our inference to regression methods?
+Second, does $Z_t$ represent the deviation from the overall population mean $\bar{S}$ or from a long-term moving average (assuming that population changes over time)?
+\cite{finkenstadt2000time} initially defined $Z_t$ as $S_t - \bar{S}$, but this definition was corrected to $Z_t = S_t - \sigma N_t$, where $\sigma$ is the mean proportion susceptible, by \cite{dalziel2016persistent} without justification.
+Finally, how do changes in population size or reporting rate over time affect our estimate of $\rho_{t+1}$ or $Z_t$?
 
-\begin{figure}
+We first simulate an epidemic using the continuous deterministic SIR model with sinusoidal transmission rates for 10 years.
+After introducing observation error base on a beta-binomial distribution, we apply 5 different regression models (Gaussian regression, linear model, locally estimated scatterplot smoothing, locally weighted scatterplot smoothing, and spline model) available from the \texttt{tsiR} package to test their ability to infer the reporting rate and susceptible dynamics (\fref{transmission}).
+We find that estimates of reporting rates are highly sensitive to regression methods.
+The Gaussian regression is particularly bad at estimating the reporting rates near the boundaries.
+Estimates of susceptible dynamics appear to be robust regardless of the regression method.
+
+\begin{figure}[!t]
 \includegraphics[width=\textwidth]{../figure/susceptible_reconstruction_compare.pdf}
 \caption{
-\swp{TODO}
+\textbf{Estimates of susceptible dynamics and reporting rate under different scenarios.}
+Susceptible reconstruction is performed on a simulated time series under different scenarios (thick grey lines represent the true values).
+Spline regression is used throughout these simulations.
 }
 \label{fig:tsircomp}
 \end{figure}
 
-Then, we compare estimates of susceptible dynamics and reporting rate under different scenarios (\fref{tsircomp}).
-We allow for population size to stay constant or increase over time and also allow for reporting rate to stay constant or increase over time; these combinations yields 4 different scenarios.
-We find that estimating time-varying reporting rate is difficult.
-We also find that $Z_t$ estimated form regression better matches $S_t - \bar{S}$ rather than $S_t - \sigma N$, i.e., any long term dynamics in the susceptible population is captured in $Z_t$.
+We then allow for both population size and reporting to stay constant or increase over time.
+Then, we compare estimates of susceptible dynamics and reporting rate under all combinations (total of 4) of these scenarios (\fref{tsircomp}).
+We find that estimating time-varying reporting rate is difficult;
+the increasing pattern in the reporting rate is only partially captured in the slope of the regression model.
+We also find that the susceptible dynamics $Z_t$ estimated from a regression better matches $S_t - \bar{S}$ rather than $S_t - \sigma N$ (latter results are not shown).
+In other words, any long-term dynamics in the susceptible population is expected to be captured in $Z_t$.
 
 \subsection{Density dependence}
 
@@ -459,40 +464,47 @@ We also find that $Z_t$ estimated form regression better matches $S_t - \bar{S}$
 \includegraphics[width=\textwidth]{../figure/tsir_poi.pdf}
 \caption{
 \textbf{Density dependence of the infection process.}
-A: probability of infection over a generation as a function of prevalence.
-B: probability of infection over a generation as a function of incidence.
-Probability of infection is calculated from 100 gillespie simulations.
-Hazard approximation curve is calculated using the true values.
-Power-law approximation is calculated by fitting the TSIR model to 100 simulations.
+A: the probability of infection over a generation as a function of prevalence.
+B: the probability of infection over a generation as a function of incidence.
+C: ratio of next incidence $i_{t+1}$ and a power function of current incidence $i_t^{\alpha}$ as a function of the current number of susceptibles $S_t$; this relationship is expected to be linear under the TSIR framework.
+Points are calculated from 100 Gillespie simulations for single outbreaks.
+The hazard approximation is calculated using the true transmission rates.
+The power-law approximation is calculated by fitting the TSIR model to 100 simulations.
 }
 \label{fig:tsirpoi}
 \end{figure}
 
-In a continuous time SIR model, density dependence in the infection process is captured in the nonlinear infection term $\beta S I/N$.
-As the number of infected individuals increases, competition among infected individuals to find a susceptible host also increases, which results in saturation in the probability of infection.
-The most common way to account for density dependence is to approximate the probability of infection a hazard function: $1- \exp(- \phi \Delta t)$ where a constant force of infection $\phi = \beta I/N$ is assumed over $\Delta t$.
-While this approximation captures the \emph{average} probability of infection fairly well, the \emph{realized} probability of infection deviates from this approximation (\fref{tsirpoi}A).
-When the epidemic is growing, the force of infection increases over time and the probability of infection is higher than on average for a given value of prevalence $I$.
-When the epidemic is dying out, the force of infection decreases over time and the probability of infection is lower than on average for a given value of prevalence $I$.
-Modeling infection this way is still useful because it provides a probabilistic interpretation of the transition between states, which can be extended to a stochastic model. 
+In a continuous time SIR model, density dependence in the infection process is implicitly captured in the nonlinear infection term $\beta S I/N$.
+As the number of infected individuals increases, competition among infected individuals to find a susceptible host also increases. 
+This results in saturation in the probability of infection (\fref{tsirpoi}A).
 
-On the other hand, the TSIR model assumes that the probability of infection follows a power function of previous incidence: $\hat{\beta} i^\alpha/N$, where $\alpha$ has been referred to as the correction factor for heterogeneity or discretization of a continuous model \citep{glass2003interpreting}.
+The simplest way to account for density dependence in a discrete time model is to approximate the probability of infection a hazard function, $1- \exp(- \phi \Delta t)$.
+This approximation can be obtained by integrating $dS/dt = - \phi S$ over $\Delta t$ assuming a constant force of infection $\phi = \beta I/N$.
+While this approximation captures the \emph{average} probability of infection reasonably well, the \emph{realized} probability of infection deviates from this approximation (\fref{tsirpoi}A).
+When an epidemic is growing, the force of infection increases over time, resulting in a higher realized probability of infection.
+Likewise, when an epidemic is dying out, the force of infection decreases over time, resulting in a lower probability of infection.
+It is still useful to model probability infection using the hazard function because it provides a probabilistic interpretation of the transition between states, which can be incorporated in stochastic models. 
+
+On the other hand, the TSIR model assumes that the probability of infection follows a power function of the current incidence: $\hat{\beta} i_t^\alpha/N$, where $\alpha$ is a correction factor for heterogeneity or discretization of a continuous model \citep{glass2003interpreting}.
 \cite{glass2003interpreting} further derived an analytical expression for the optimal value of $\alpha$ as a function of birth rate and the basic reproductive number by comparing the second order Taylor expansion of the TSIR model to that of a continuous time model.
-In the absence of susceptible recruitment to the population, the optimal value of $\alpha$ based on their approximation is unity, which has been known to be the condition for homogeneous mixing.
+In the absence of susceptible recruitment to the population, the optimal value of $\alpha$ based on their approximation is unity, which has been regarded as the condition for homogeneous mixing.
 This is false.
 
-Instead, we propose that $\alpha$ should be interepreted as the strength of density dependence.
-Smaller values of $\alpha$ captures stronger density dependence and faster saturation in the probability of infection.	
+Instead, we propose that $\alpha$ should be interpreted as the strength of density dependence.
+Smaller values of $\alpha$ capture stronger density dependence and faster saturation of the probability of infection.
 Under this interpretation, it is clear that $\alpha$ should always be less than unity even in a homogeneously mixing population.
-Fitting the TSIR model to a simulated epidemic confirms this prediction (\fref{tsirpoi}B).
-For a single epidemic with $\mathcal R_0 = 2$, we estimate the optimal value for $\alpha$ to be 0.922 (95\% CI: 0.919 - 0.926) and $\hat{\beta}$ to be 3.90 (95\% CI: 3.79 - 4.01).
+Simulations of an SIR model confirms this prediction by demonstrating saturation in the probability of infection as incidence increases (\fref{tsirpoi}B).
+Fitting the TSIR model these simulations further shows that the optimal value for $\alpha$ is less than unity ($\alpha = 0.922$).
+However, there is a slight mismatch between the estimated probability of infection and the realized probability of infection because the TSIR method effectively tries to minimize the sum of squares on a log scale.
 
-High estimate of $\hat{\beta}$, in comparison to the true basic reproductive number $\mathcal R_0$, suggests that the raw estimate of the transmission rate $\hat{\beta}$ from the TSIR regression should not be taken as an estimate of the reproductive number.
-Instead, we can translate this estimate to a transmission rate of a continuous-time SIR model by matching the estimated probability infection from the TSIR model, $\hat{\beta} i^\alpha/N$, with the hazard function, $1 - \exp(-\beta I/N)$, at mean incidence, $\bar{i}$, assuming that incidence and prevalence are equivalent:
+The high estimate of $\hat{\beta} = 3.9$, in comparison to the true basic reproductive number $\mathcal R_0 = 2$, suggests that the raw estimate of the transmission rate $\hat{\beta}$ from the TSIR regression should not be taken as an estimate of the reproductive number.
+Instead, we can translate this estimate to an estimate of the basic reproduction number of a continuous-time SIR model by matching the estimated probability infection from the TSIR model, $\hat{\beta} i^\alpha/N$, with the hazard function, $1 - \exp(-\mathcal R_0 i/N)$, at mean incidence, $\bar{i}$, assuming that incidence and prevalence are equivalent:
 \begin{equation}
-\tsub{\beta}{continuous} \approx - \frac{N}{\bar{i}} \log \left(1 - \hat{\beta} \bar{i}^\alpha/N \right).
+\mathcal R_0 \approx - \frac{N}{\bar{i}} \log \left(1 - \hat{\beta} \bar{i}^\alpha/N \right).
 \end{equation}
-Then, we get $\tsub{\beta}{continuous} = 2.1$, which is much closer to the true value.
+Applying this correction, the TSIR method estimates $\mathcal R_0 = 2.1$, which is much closer to the true value.
+
+
 
 The original TSIR method included an exponent on the susceptibles as well:
 \begin{equation}

@@ -57,6 +57,10 @@ load("../sir_fit/tsir_fit.rda")
 
 allcover_sir$tsir <- bind_rows(fitlist, .id="sim")
 
+load("../sir_fit/tsir_fit_raw.rda")
+
+tsir_raw <- bind_rows(fitlist, .id="sim")
+
 alldata_sir <- bind_rows(allcover_sir, .id="type") %>%
 	mutate(sim="gillespie")
 
@@ -76,15 +80,25 @@ estdata <- alldata_sir %>%
 		type=factor(type, levels=c("trajectory", "gradient", "tsir", "pomp", "renewal_pomp"),
 					labels=c("trajectory\nmatching",
 							 "gradient\nmatching",
-							 "tSIR",
+							 "TSIR",
 							 "POMP",
 							 "Renewal"))
 	)
 
+tsir_raw_summary <- tsir_raw %>%
+	filter(param %in% c("beta")) %>%
+	mutate(error=log(mean/2)) %>%
+	summarize(
+		bias=mean(error, na.rm=TRUE),
+		RMSE=sqrt(mean(error^2, na.rm=TRUE)),
+		coverage=mean(coverage, na.rm=TRUE)
+	)
+	
 g1 <- ggplot(estdata) +
 	geom_rect(xmin=-Inf, xmax=Inf, ymin=0.887, ymax=0.983, alpha=0.1) +
 	geom_hline(yintercept=0.95, lty=1) +
 	geom_point(aes(type, coverage, shape=time, col=est), size=5) +
+	geom_point(aes("TSIR", tsir_raw_summary$coverage), size=5, shape=2) +
 	scale_y_continuous("Coverage probability", limits=c(0, 1)) +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
@@ -94,6 +108,7 @@ g1 <- ggplot(estdata) +
 g2 <- ggplot(estdata) +
 	geom_hline(yintercept=0, lty=1) +
 	geom_point(aes(type, bias, shape=time, col=est), size=5) +
+	geom_point(aes("TSIR", tsir_raw_summary$bias), size=5, shape=2) +
 	scale_y_continuous("Bias") +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
@@ -103,6 +118,7 @@ g2 <- ggplot(estdata) +
 g3 <- ggplot(estdata) +
 	geom_hline(yintercept=0, lty=1) +
 	geom_point(aes(type, RMSE, shape=time, col=est), size=5) +
+	geom_point(aes("TSIR", tsir_raw_summary$RMSE), size=5, shape=2) +
 	scale_y_continuous("RMSE") +
 	scale_shape_manual("Time-scale", values=c(1, 16)) +
 	scale_colour_discrete("Estimation") +
