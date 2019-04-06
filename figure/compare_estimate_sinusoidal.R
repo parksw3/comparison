@@ -38,12 +38,22 @@ for (i in 0:9) {
 alltrans$renewal <- bind_rows(templist, .id="sim")
 
 transdata <- alltrans %>%
-	bind_rows(.id="type")
+	bind_rows(.id="type") %>%
+	mutate(
+		type=factor(type, 
+					levels=c("gradient", "tsir_cyclic", "pomp", "renewal"),
+					labels=c("gradient\nmatching", "TSIR", "POMP", "Renewal"))
+	)
 
 gtrans <- ggplot(transdata) +
 	geom_line(aes(time, beta, group=interaction(sim, type)), alpha=0.2) +
 	stat_function(fun=function(x) (500/26 * (1 + 0.15 * cos(x * 2 * pi/26))), col=2, lwd=1) +
-	scale_x_continuous(expand=c(0, 0)) +
-	facet_wrap(~type, nrow=1)
+	scale_x_continuous("Time (generations)", expand=c(0, 0)) +
+	scale_y_continuous("Transmission rates", expand=c(0, 0)) +
+	facet_wrap(~type, nrow=1) +
+	theme(
+		strip.background = element_blank(),
+		panel.grid = element_blank()
+	)
 
-ggsave("compare_transmission.pdf", gtrans, width=6, height=4)
+ggsave("compare_transmission.pdf", gtrans, width=6, height=3)

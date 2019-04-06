@@ -184,7 +184,7 @@ i_{t+1} &= \beta_t S_t \frac{i_t^\alpha}{N_t}
 where $\alpha$ is often referred to as a conversion factor for discretization of a system or inhomogeneity \citep{liu1986influence, bjornstad2002dynamics, glass2003interpreting}.
 Taking log on both sides, estimation of the transmission rates $\beta_t$ becomes a regression problem:
 \begin{equation}\label{eq:tsir}
-\log i_{t + 1} = \alpha \log \beta_t + \log S_t + \alpha \log i_t - \log N_t + \epsilon_t.
+\log i_{t + 1} = \log \beta_t + \log S_t + \alpha \log i_t - \log N_t + \epsilon_t.
 \end{equation}
 
 A key assumption behind the TSIR model is that all, if not most, individuals become infected eventually \citep{finkenstadt2000time}.
@@ -300,6 +300,7 @@ Again, we define observation likelihood using a negative-binomial distribution:
 \begin{equation}
 i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}(\rho (C(t) - C(t - \tsub{t}{rep})) , \tsub{\phi}{obs}).
 \end{equation}
+This model is implemented in the R package \texttt{POMP} \citep{king2015statistical}.
 
 \subsubsection*{Renewal equation}
 
@@ -466,10 +467,11 @@ In other words, any long-term dynamics in the susceptible population is expected
 \textbf{Density dependence of the infection process.}
 A: the probability of infection over a generation as a function of prevalence.
 B: the probability of infection over a generation as a function of incidence.
-C: ratio of next incidence $i_{t+1}$ and a power function of current incidence $i_t^{\alpha}$ as a function of the current number of susceptibles $S_t$; this relationship is expected to be linear under the TSIR framework.
-Points are calculated from 100 Gillespie simulations for single outbreaks.
 The hazard approximation is calculated using the true transmission rates.
 The power-law approximation is calculated by fitting the TSIR model to 100 simulations.
+C: ratio of next incidence $i_{t+1}$ and a power function of current incidence $i_t^{\alpha}$ as a function of the current number of susceptibles $S_t$; this relationship is expected to be linear under the TSIR framework.
+Solid black line is the estimated relationship from the TSIR method when we introduce an exponent to $S_t$: $i_{t+1}/i_t^{0.92} = 4.9 S_t^{0.98}$.
+Points are calculated from 100 Gillespie simulations for single outbreaks.
 }
 \label{fig:tsirpoi}
 \end{figure}
@@ -494,7 +496,7 @@ Instead, we propose that $\alpha$ should be interpreted as the strength of densi
 Smaller values of $\alpha$ capture stronger density dependence and faster saturation of the probability of infection.
 Under this interpretation, it is clear that $\alpha$ should always be less than unity even in a homogeneously mixing population.
 Simulations of an SIR model confirms this prediction by demonstrating saturation in the probability of infection as incidence increases (\fref{tsirpoi}B).
-Fitting the TSIR model these simulations further shows that the optimal value for $\alpha$ is less than unity ($\alpha = 0.922$).
+Fitting the TSIR model to these simulations further shows that the optimal value for $\alpha$ is less than unity ($\alpha = 0.922$).
 However, there is a slight mismatch between the estimated probability of infection and the realized probability of infection because the TSIR method effectively tries to minimize the sum of squares on a log scale.
 
 The high estimate of $\hat{\beta} = 3.9$, in comparison to the true basic reproductive number $\mathcal R_0 = 2$, suggests that the raw estimate of the transmission rate $\hat{\beta}$ from the TSIR regression should not be taken as an estimate of the reproductive number.
@@ -502,67 +504,76 @@ Instead, we can translate this estimate to an estimate of the basic reproduction
 \begin{equation}
 \mathcal R_0 \approx - \frac{N}{\bar{i}} \log \left(1 - \hat{\beta} \bar{i}^\alpha/N \right).
 \end{equation}
-Applying this correction, the TSIR method estimates $\mathcal R_0 = 2.1$, which is much closer to the true value.
+After applying this correction, the TSIR method estimates $\mathcal R_0 = 2.1$, which is much closer to the true value.
 
-
-
-The original TSIR method included an exponent on the susceptibles as well:
+We also compare how the effective transmission rate varies with the number of susceptibles (\fref{tsirpoi}C).
+Under the TSIR framework, $i_{t+1}/i_t^\alpha$ should be a linear function of the number of susceptibles, where the slope is equal to the transmission rate divided by the population size: $\hat{\beta}/N$.
+However, for a continuous-time model, the ratio $i_{t+1}/i_t^\alpha$ decreases at a decelerating rate as the number of susceptible individual decreases due to density dependency.
+Even when we modify the TSIR model to include an exponent $\gamma$ on the number of susceptible individuals,
 \begin{equation}
-\log i_{t + 1} = \log \beta_t + \gamma \log S_t + \alpha \log i_t - \log N_t + \epsilon_t.
+\log i_{t+1} = \log \hat{\beta} + \alpha \log i_t + \gamma \log S_t - \log N + \epsilon_t,
 \end{equation}
-$\gamma$ is unidentifiable when $\bar S$ is unknown.
-Here, we can estimate $\gamma$ as well because we know the true value of $\bar S$.
-When $\gamma$ as estimated, we get $\gamma = 0.978$ (95\% CI: 0.967 - 0.989), $\alpha = 0.926$ (95\% CI: 0.918 - 0.926) and $\beta = 4.93$ (95\% CI: \swp{Finish}).
+we are not able to match the patterns of the ratio $i_{t+1}/i_t^\alpha$ (\fref{tsirpoi}C; solid black line).
 
-
-
-\subsection{Simulation study: comparison of statistical properties}
+\subsection{Simulation study: constant transmission rate}
 
 \begin{figure}[!t]
 \includegraphics[width=\textwidth]{../figure/compare_estimate_sir.pdf}
 \caption{
-\textbf{add me.}
+\textbf{Comparison of the estimates of a constant transmission rate from different method.}
+The triangles represent raw TSIR estimates before correcting for the discretization of a continuous-time model.
+The black lines show nominal coverage, zero bias, and zero RMSE, respectively.
+The grey bars represent the 95\% binomial confidence intervals for 100 simulations.
 }
 \label{fig:coverage}
 \end{figure}
 
-We compare performance of each method by conducting a simulation study.
-We simulate 100 stochastic epidemic time series with fixed transmission rate without natural birth or death.
-\swp{Parameter and rationale} 
+First, we use 100 Gillespie simulations with constant transmission rate (without natural birth or death) to assess the performance of each method to estimate the transmission rate of $\beta$.
+Trajectory matching and Sequential Monte Carlo estimate the transmission rate $\beta$, reporting rate $\rho$, over-dispersion parameter $\tsub{\phi}{obs}$, and the initial number of infected individuals $I(0)$ (initial number of the susceptible individual is assumed to be $N - I(0)$).
+The renewal equation estimates an additional parameter $\tsub{G}{var}$, which is the approximate variance of the generation-interval distribution.
+On the other hand, gradient matching and TSIR estimate only the transmission rate $\beta$.
+True susceptible dynamics and reporting are assumed to be known for both methods because they cannot be estimated for a single outbreak with a regression.
 
-Results of each method is summarized into three summary statistics: coverage probability, bias, and root mean squared error (RMSE).
-Coverage probability is the proportion of confidence intervals that contain the true value over repeated experiments. For example, the 95\% confidence interval should contain the true value 95\% of the time.
+Estimates of the transmission rates are summarized into coverage probability, bias, and root mean squared error (RMSE).
+Coverage probability is the proportion of confidence intervals that contain the true value over repeated experiments. 
+For example, the 95\% confidence interval should contain the true value 95\% of the time.
 Bias and RMSE are computed on a log scale.
 
-We find that the Monte Carlo methods (whether the model is represented as a compartmental model or a renewal equation) performs best (\fref{coverage}).
-Estimates of the tranismission rates based on Sequential Monte Carlo attains nominal coverage and has least bias and RMSE.
-However, in order for the renewal equation model to attain nominal coverage, the simulation time step has to be as fine as one twentieth of the mean generation length; simulating an epidemic at one tenth of the mean generation length results in \swp{70\%} coverage (\swp{see Appendix}).
-While trajectory matching allows us to fit a continuous-time model without having to rely on a discretization process, it attains a slightly lower coverage than the nominal probability.
+We find that the Monte Carlo methods (whether the model is represented as a compartmental model or a renewal equation) provide best estimates (\fref{coverage}).
+Estimates of the transmission rates based on Sequential Monte Carlo give good coverage and has the least bias and RMSE.
+However, in order for the renewal equation model to attain nominal coverage, the simulation time step $\Delta t$ has to be as fine as one-twentieth of the mean generation length; 
+simulating an epidemic at one-tenth of the mean generation length results in \swp{70\%} coverage (\swp{see Appendix}).
+While trajectory matching can fit a continuous-time model without having to rely on a discretization process, it gives a slightly lower coverage than the nominal probability.
 
 Both regression-based methods (gradient matching and TSIR regression) perform similarly in terms of RMSE.
-Gradient matching and TSIR regression give slightly biased answers in opposite directions but they seem to be negligible.
-Surprisingly, the TSIR regression attains 100\% coverage if we assume that we know the exact susceptible dynamics.
-However, the true coverage is likely to be lower because susceptible reconstruction method will not be able to recover the \textit{exact} dynamics.
+Gradient matching and TSIR give slightly biased estimates in opposite directions.
+Surprisingly, the TSIR regression gives 100\% coverage if we assume that we know the exact susceptible dynamics.
+However, the true coverage is likely to be lower because true dynamics of the susceptible population is never exactly known.
 Low coverage of the gradient matching method is likely driven by not accounting for uncertainty during the initial smoothing process; we do not explore this idea here.
-Finally, we note the the summary statistics for the TSIR method are based on corrected estimates; using raw estimates of the transmission rate obtained from the TSIR regression, without correcting for discretization, yields an estimate with strong bias and 0\% coverage.
+Finally, we note the summary statistics for the TSIR method are based on corrected estimates; using raw estimates of the transmission rate obtained from the TSIR regression, without correcting for discretization, gives estimates with strong bias and low coverage.
 
 \subsection{Simulation study: estimating time-varying transmission rates}
 
 \begin{figure}[!t]
 \includegraphics[width=\textwidth]{../figure/compare_transmission.pdf}
+\caption{
+\textbf{Comparison of the estimates of a time-varying transmission rate from different method.}
+The red line represents the true transmission rates.
+The black lines represent the estimated transmission rates from 100 simulations.
+}
 \end{figure}
-
-We simulate 100 stochastic epidemic time series with sinusoidal transmission rate and test each method's ability to recover the true shape of the transmission rate.
-We excluded trajectory matching from this analysis because fitting a deterministic model to a time series that is driven by highly nonlinear and stochastic system is difficult and not likely to result in useful inference. 
+ 
+Finally, we use 100 Gillespie simulations with sinusoidal transmission rates to assess the performance of each method to estimate the transmission rate.
+We excluded trajectory matching from this analysis because fitting a deterministic model to a time series that is driven by highly nonlinear and stochastic system is difficult and not likely to result in useful inference.
 We find that both regression-based methods are able to recover the true shape of the transmission rate reasonably well but give biased estimates.
 TSIR method yields a slightly more variable estimates; this is likely to be driven by inaccuracy in the estimates of the reporting rate. 
 
-Monte Carlo methods yield more variable estimates.
-Estimates follow a sinusoidal shape (higher transmission rates near the boundaries and lower transmission rates near the middle) but are too wiggly.
-Fitting a renewal equation yields much more variable estimates of the transmission rates because the model allows for extra uncertainty in the system by trying to estimate the variance of the generation-interval distribution.
-On one hand, these results suggest that small changes in the transmission rate are unidentifiable in the presence of process error;
-in fact, fitting a TSIR model without using splines also estimates a wiggly transmission rate.
-On the other hand, we simply may not have enough power to estimate the true shape of the transmission rates without constraining the shape.
+Monte Carlo methods give more variable estimates.
+Estimates generally follow a sinusoidal shape -- transmission rates are higher near the boundaries and lower in the middle -- but are `wigglier'.
+Fitting the renewal equation gives much more variable estimates of the transmission rates because the renewal equation accounts for extra uncertainty in the system by allowing for the variance of the generation-interval distribution to vary.
+These results suggest that small changes in the transmission rate are difficult to identify in the presence of process error.
+In fact, we find similar patterns when we try to fit the TSIR model without using splines \swp{Appendix}.
+It is also possible that we may not have enough power to estimate the true shape of the transmission rates from 9 years of data (equivalent to 234 data points assuming biweekly reporting).
 
 \section{Discussion}
 
