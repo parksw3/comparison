@@ -577,12 +577,43 @@ It is also possible that we may not have enough power to estimate the true shape
 
 \section{Discussion}
 
+Estimating biologically realistic parameters of a model is central to the analysis of epidemic time series.
+Here, we compare several different methods for estimating the unobserved transmission rates of the SIR model for recurrent epidemics.
+Simple methods that do not make an explicit distinction between different sources of errors (e.g., process and observation error) give reasonable estimates but fail to capture uncertainty associated with their estimates.
+More sophisticated methods that explicitly account for these errors provide good estimates.
+However, as we increase the flexibility of the model (e.g., by allowing for the shape of the generation-interval distribution to vary), it becomes more difficult to estimate the true shape of the transmission rates.
+The TSIR method works reasonably well under several strong assumptions.
+
+\subsection{Discretization}
+
+Fitting a continuous-time stochastic model to an epidemic time series is practically impossible.
+Many inferential frameworks rely on discrete-time approximations instead to estimate the parameters of the corresponding continuous-time model \citep{finkenstadt2002stochastic, king2015statistical, champredon2018two, li2018fitting}.
+However, the effects of these discrete-time approximations are rarely discussed.
+We show that the discretization of a continuous-time model can make a huge difference in the inference.
+In particular, the renewal equation has low coverage (\swp{approx70\%}) when the simulation time step is one-tenth of the mean generation time.
+
+The low coverage is likely to be driven by changes in the underlying generation-interval distribution.
+As the discretization time step changes, mean and variance of the distribution also changes even when the parameters of the distributions are held constant.
+For our example, changing the time step from one-twentieth of the mean generation time to one-tenth increases the mean generation time by 2.5\%.
+This change is sufficient to introduce a small bias in our estimates and reduce coverage \swp{Appendix}.
+Using a coarser time scale will introduce greater bias and 
+
+
+\subsection{Generation-interval distributions}
+
+
+\subsection{Process and observation error}
+
+For weakly non-linear systems with large observation error, 
+
+
+\subsection{Penalization}
 
 
 
 \section{Appendix}
 
-\subsection{Equivalence of incidence, mortality, and prevalence}
+\subsection{Relating incidence, mortality, and prevalence}
 
 First, recall that mortality case can be written as
 \begin{equation}
