@@ -60,11 +60,15 @@
 \textbf{Acknowledgements}
 \end{center}
 
-I would like to thank Dr. Ben Bolker and Dr. Jonathan Dushoff for their guidance throughout my undergradute studies.
+I would like to thank Dr. Ben Bolker and Dr. Jonathan Dushoff for their guidance throughout my undergraduate studies.
+Their enthusiasm for statistics and biology has been truly inspiring.
+Without them, I would not have known about the joy of doing research.
 
-I would also like to thank Mac-Theobio group.
+I would also like to thank the Mac-Theobio group for all the interesting scientific discussions we've had;
+Chyun-Fung Shi for making the lab a welcoming environment;
+Dr. David Earn, Dr. Stephen Ellner, Dr. Aaron King, and Dr. Bryan Grenfell for useful ideas and comments related to this project.
 
-Finally, I would like to thank my family for supporting me.
+Finally, I would like to thank my family for their love and support.
 
 \pagebreak
 
@@ -375,7 +379,7 @@ For regression-based methods (TSIR and gradient matching), we allow the number o
 \subsection{Types of epidemic time series}
 
 When reporting step is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
-In fact, we can show that incidence, prevalence, and mortality are nearly equivalent for simple SIR model \eref{sir} under Euler approximation when reporting step is equal to mean generation time (see Appendix).
+In fact, we can show that incidence, prevalence, and mortality are nearly equivalent for simple SIR model \eref{sir} under Euler approximation when reporting step is equal to mean generation time (see Appendix A.1).
 Their deterministic dynamics are sufficiently similar that we expect these three reports to be nearly indistinguishable from each other when demographic stochasticity and observation error is introduced.
 However, this is not true for more complicated models.
 For a more realistic model with an exposed period (SEIR model), the incidence is comparable to prevalence when reporting time step is equal to mean \emph{infectious period} rather than mean \emph{generation time}.
@@ -409,9 +413,8 @@ On the other hand, incidence report no longer matches prevalence report when rep
 Fitting incidence and mortality curve yields similar estimates of the reporting rate $\rho$ because they both contain equivalent information about the final size of an epidemic: total \emph{true} incidence and total \emph{true} mortality is equal to the final size of an epidemic.
 
 Even when mean generation time is exactly known, we find that estimates of transmission rate $\beta$ and reporting rate $\rho$ depends on our assumptions about the time series.
-We find that fitting mortality and prevalence yields consistent estimates of both $\beta$ and $\rho$ in this case, whereas fitting incidence yields similar but still different estimates.
-Treating incidence report as prevalence report (and vice versa) should be avoided.
-\swp{Appendix; come back}
+We find that fitting mortality and prevalence curves give consistent estimates of both $\beta$ and $\rho$, whereas fitting incidence curve gives similar but still different estimates (see Appendix A.2). \swp{TODO}
+Any analysis of an epidemic time series should carefully consider what the time series might actually represent.
 
 \subsection{Susceptible reconstruction}
 
@@ -546,7 +549,7 @@ Bias and RMSE are computed on a log scale.
 We find that the Monte Carlo methods (whether the model is represented as a compartmental model or a renewal equation) provide best estimates (\fref{coverage}).
 Estimates of the transmission rates based on Sequential Monte Carlo give good coverage and has the least bias and RMSE.
 However, in order for the renewal equation model to attain nominal coverage, the simulation time step $\Delta t$ has to be as fine as one-twentieth of the mean generation length; 
-simulating an epidemic at one-tenth of the mean generation length results in \swp{70\%} coverage (\swp{see Appendix}).
+simulating an epidemic at one-tenth of the mean generation length results in \swp{70\%} coverage.
 While trajectory matching can fit a continuous-time model without having to rely on a discretization process, it gives a slightly lower coverage than the nominal probability.
 
 Both regression-based methods (gradient matching and TSIR regression) perform similarly in terms of RMSE.
@@ -576,7 +579,7 @@ Monte Carlo methods give more variable estimates.
 Estimates generally follow a sinusoidal shape -- transmission rates are higher near the boundaries and lower in the middle -- but are `wigglier'.
 Fitting the renewal equation gives much more variable estimates of the transmission rates because the renewal equation accounts for extra uncertainty in the system by allowing for the variance of the generation-interval distribution to vary.
 These results suggest that small changes in the transmission rate are difficult to identify in the presence of process error.
-In fact, we find similar patterns when we try to fit the TSIR model without using splines \swp{Appendix}.
+In fact, we find similar patterns when we try to fit the TSIR model without using splines (see Appendix A.3). \swp{TODO}
 It is also possible that we may not have enough power to estimate the true shape of the transmission rates from 9 years of data (equivalent to 234 data points assuming biweekly reporting).
 
 \section{Discussion}
@@ -588,7 +591,7 @@ More sophisticated methods that explicitly account for these errors provide good
 However, as we increase the flexibility of the model (e.g., by allowing for the shape of the generation-interval distribution to vary), it becomes more difficult to estimate the true shape of the transmission rates.
 The TSIR method works reasonably well under several strong assumptions.
 
-\subsection{Discretization}
+\subsection{Discretization of a continuous-time model}
 
 Fitting a continuous-time stochastic model to an epidemic time series is practically impossible.
 Many inferential frameworks, instead, rely on discrete-time approximations to estimate the parameters of the corresponding continuous-time model \citep{finkenstadt2002stochastic, king2015statistical, champredon2018two, li2018fitting}.
@@ -611,7 +614,7 @@ In particular, we prefer to separate the simulation time step from the reporting
 We expect a realistic generation-interval distribution of measles to be narrower than the exponential distribution but wider than the fixed distribution.
 We try to bridge these two extreme assumptions by using the renewal equation.
 However, the renewal equation does not perform better because we test our methods on Gillespie simulations of the SIR model, which assumes an exponentially decreasing generation-time distribution.
-While we might expect the renewal equation to perform better against real data, simulating the renewal equation with various shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics \swp{Appendix}.
+While we might expect the renewal equation to perform better against real data, simulating the renewal equation with various shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics (see Appendix A.4). \swp{TODO}
 These results are consistent with several previous studies that reported that using non-exponential distributions made small differences to their conclusion \citep{he2009plug}. \swp{Confirm}.
 Based on these results, it is not clear whether it is worth estimating the shape of the generation-interval distribution at the expense of power to estimate the transmission rates.
 
@@ -621,7 +624,7 @@ Our study suggests that the assumptions about the amount of process and observat
 For weakly nonlinear systems with large observation error, not making this distinction may not have large effects on the inference \citep{ma2014estimating}.
 However, for highly nonlinear and stochastic systems, such as measles, assuming that there is only observation error leads to over-confidence \citep{king2015avoidable, taylor2016stochasticity}.
 On the other hand, assuming that there is only process error could lead to under-confidence (\swp{Fig?}).
-Although ignoring observation error is not as bad as ignoring process error \swp{?}, any formal analyses should consider different sources of errors explicitly.
+Although ignoring observation error may not be as bad as ignoring process error (see Appendix A.5) \swp{TODO}, any formal analyses should consider different sources of errors explicitly.
 
 \section{Conclusions}
 
@@ -629,9 +632,15 @@ Although ignoring observation error is not as bad as ignoring process error \swp
 
 \pagebreak
 
+\phantomsection 
+\addcontentsline{toc}{section}{References} 
 \bibliography{thesis}
 
 \pagebreak
+
+\appendix
+\renewcommand{\thesection}{\Alph{section}}
+\renewcommand{\thesubsection}{A.\arabic{subsection}}
 
 \section{Appendix}
 
@@ -656,7 +665,17 @@ I(t+\tsub{t}{rep}) &= I(t) + \int_{t}^{t+\tsub{t}{rep}} \frac{dI(s)}{ds} ds\\
 \end{equation}
 Here, we assumed that individuals leaving infected class $I$ from natural mortality is negligible over the reporting period.
 
-\swp{TODO}
+\pagebreak
+\subsection{Fitting incidence, mortality, and prevalence when mean generation time is known}
+
+\pagebreak
+\subsection{Fitting TSIR model without cyclic splines}
+
+\pagebreak
+\subsection{The effects of the shape of generation-interval distributions on measles dynamics}
+
+\pagebreak
+\subsection{Process and observation error}
 
 
 
