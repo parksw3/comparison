@@ -99,9 +99,15 @@ Approximate likelihood obtained by particle filtering can be maximized by iterat
 
 Unlike any of the previously discussed methods, which can be used to estimate parameters of a wide range of systems, the time series SIR (TSIR) method seeks to estimate time-varying transmission rates of fully immunizing childhood infections, specifically \citep{finkenstadt2000time}.
 The TSIR method first estimates the dynamics of the susceptible population based on the assumption that all individuals eventually become infected;
-conditional on the estimated susceptible dynamics, transmission rates can be estimated using a regression. 
+using the estimated susceptible dynamics, transmission rates can be estimated using a regression. 
 Even though the TSIR method is designed to tackle a specific kind of problems, it has been consistently used since its introduction.
-\swp{Add more.}
+It is able to explain complex dynamics of measles \citep{finkenstadt2000time, bjornstad2002dynamics, grenfell2002dynamics, finkenstadt2002stochastic, metcalf2009seasonality, mantilla2009decreasing, ferrari2010rural, dalziel2016persistent, mahmud2017drivers}, 
+cholera \citep{koelle2004disentangling, pascual2008predicting}, 
+malaria \citep{pascual2007shifting}, 
+rubella \citep{metcalf2010rubella,metcalf2011epidemiology, metcalf2013implications}, 
+chikungunya \citep{perkins2015estimating}, 
+varicella \citep{jackson2014effects, baker2018dynamic}, 
+and Hand, Foot, and Mouth Disease \citep{takahashi2016hand, van2016hand, du2017estimating, takahashi2018epidemic}.
 So what makes it work so well?
 
 \swp{Come back}
@@ -218,8 +224,6 @@ i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}(\mu_t, \tsub{\phi}{obs}),
 \end{equation}
 where $\tsub{\phi}{obs}$ is the dispersion parameter of a negative binomial distribution.
 
-\swp{Maybe come back.}
-
 \subsubsection*{Gradient matching}
 
 Like trajectory matching, gradient matching seeks to find a set of parameters such that the gradient of an ODE model matches the observed gradient \citep{ellner2002fitting}.
@@ -240,7 +244,7 @@ We then fit a smooth curve $f(t)$ to log reported incidence $\log i_{t, {\tiny \
 \log i_{t, {\tiny \textrm{rep}}} \sim \mathrm{Normal}\left(f(t), \tsub{\sigma}{smooth}^2 \right),
 \end{equation}
 where natural cubic splines are used to model the function $f$.
-For the purpose of estimating time-varying transmission rates, placing basis knots every 6 generations appear to be sufficient \swp{Appendix}.
+For the purpose of estimating time-varying transmission rates, placing basis knots every 6 generations appear to be sufficient.
 
 The smooth curve $f(t)$ represents the dynamics of the log of prevalence ($\log I_t$) up to a constant.
 When we take the derivative of the curve $f(t_i)$, we get an estimate of the derivative of the log of prevalence:
@@ -587,7 +591,7 @@ The TSIR method works reasonably well under several strong assumptions.
 \subsection{Discretization}
 
 Fitting a continuous-time stochastic model to an epidemic time series is practically impossible.
-Many inferential frameworks rely on discrete-time approximations instead to estimate the parameters of the corresponding continuous-time model \citep{finkenstadt2002stochastic, king2015statistical, champredon2018two, li2018fitting}.
+Many inferential frameworks, instead, rely on discrete-time approximations to estimate the parameters of the corresponding continuous-time model \citep{finkenstadt2002stochastic, king2015statistical, champredon2018two, li2018fitting}.
 However, the effects of these discrete-time approximations are rarely discussed.
 We show that the discretization of a continuous-time model can make a huge difference in the inference.
 In particular, the renewal equation has low coverage (\swp{approx70\%}) when the simulation time step is one-tenth of the mean generation time.
@@ -595,21 +599,39 @@ In particular, the renewal equation has low coverage (\swp{approx70\%}) when the
 The low coverage is likely to be driven by changes in the underlying generation-interval distribution.
 As the discretization time step changes, mean and variance of the distribution also changes even when the parameters of the distributions are held constant.
 For our example, changing the time step from one-twentieth of the mean generation time to one-tenth increases the mean generation time by 2.5\%.
-This change is sufficient to introduce a small bias in our estimates and reduce coverage \swp{Appendix}.
-Using a coarser time scale will introduce greater bias and 
+This increase in the mean generation time is sufficient to introduce a small bias in our estimates and reduce coverage \citep{wallinga2006generation}.
+Using a coarser time scale is likely to increase bias and decrease coverage.
+This bias is not observed when we fit discrete-time compartmental SIR model via POMP because we adjust the rate parameter to match the mean generation time of the discrete distribution and the mean generation time of the continuous distribution \citep{he2009plug}.
 
+These results suggest that discretization of a continuous-time model should be done carefully.
+In particular, we prefer to separate the simulation time step from the reporting time step.
 
 \subsection{Generation-interval distributions}
 
+We expect a realistic generation-interval distribution of measles to be narrower than the exponential distribution but wider than the fixed distribution.
+We try to bridge these two extreme assumptions by using the renewal equation.
+However, the renewal equation does not perform better because we test our methods on Gillespie simulations of the SIR model, which assumes an exponentially decreasing generation-time distribution.
+While we might expect the renewal equation to perform better against real data, simulating the renewal equation with various shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics \swp{Appendix}.
+These results are consistent with several previous studies that reported that using non-exponential distributions made small differences to their conclusion \citep{he2009plug}. \swp{Confirm}.
+Based on these results, it is not clear whether it is worth estimating the shape of the generation-interval distribution at the expense of power to estimate the transmission rates.
 
 \subsection{Process and observation error}
 
-For weakly non-linear systems with large observation error, 
+Our study suggests that the assumptions about the amount of process and observation error affect the uncertainty of our inference.
+For weakly nonlinear systems with large observation error, not making this distinction may not have large effects on the inference \citep{ma2014estimating}.
+However, for highly nonlinear and stochastic systems, such as measles, assuming that there is only observation error leads to over-confidence \citep{king2015avoidable, taylor2016stochasticity}.
+On the other hand, assuming that there is only process error could lead to under-confidence (\swp{Fig?}).
+Although ignoring observation error is not as bad as ignoring process error \swp{?}, any formal analyses should consider different sources of errors explicitly.
+
+\section{Conclusions}
 
 
-\subsection{Penalization}
 
+\pagebreak
 
+\bibliography{thesis}
+
+\pagebreak
 
 \section{Appendix}
 
@@ -637,123 +659,5 @@ Here, we assumed that individuals leaving infected class $I$ from natural mortal
 \swp{TODO}
 
 
-\section{Fitting continuous models}
-
-\subsection{Gradient matching}
-
-\begin{figure}[t]
-\includegraphics[width=\textwidth]{../figure/gradient_matching_sinusoidal.pdf}
-\caption{This is not a caption.}
-\end{figure}
-
-Conditions:
-\begin{itemize}
-	\item See Jost and Ellner (???)
-	\item sampled sufficiently
-	\item not too much error
-	\item Brunel Parameter estimation of ODE’s via nonparametric estimators
-\end{itemize}
-
-
-%% read pomp-Astic somewhere
-
-\subsection{Spectral matching}
-
-What is this? Read Reuman et al. 2006
-%% https://www.pnas.org/content/pnas/103/49/18860.full.pdf
-
-
-\bibliography{thesis}
-
-\pagebreak
-
-\section{Appendix}
-
-\subsection{Derivation of growth rate in discrete-time SIR model}
-
-
-Derivation:
-\begin{equation}
-\begin{aligned}
-S_{t+\Delta t} &= S_t - S_t (1- \exp(-\beta I_t \Delta t/N))\\
-I_{t+\Delta t} &= S_t (1- \exp(-\beta I_t \Delta t/N)) + I_t - I_t (1- \exp(-\gamma \Delta t))
-\end{aligned}
-\end{equation}
-Assuming tat $S_t$ is approximately equal to $N$, we get
-\begin{equation}
-I_{t+\Delta t} = N_t (1- \exp(-\beta I_t \Delta t/N)) + I_t \exp(-\gamma \Delta t)
-\end{equation}
-When $I_t \approx 0$, $\exp(-\beta I_t \Delta t/N) \approx 1 - \beta I_t \Delta t/N$ and so
-\begin{equation}
-\begin{aligned}
-I_{t+\Delta t} &\approx  I_t \beta \Delta t + I_t \exp(-\gamma \Delta t)\\
-&= I_t (\beta \Delta t + \exp(-\gamma \Delta t))
-\end{aligned}
-\end{equation}
-Substituting $\hat{\gamma}$, we get
-\begin{equation}
-I_{t+\Delta t} = I_t \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right),
-\end{equation}
-Therefore,
-\begin{equation}
-I_{t} = I_0 \left(1 + \beta\Delta t - \frac{\Delta t}{\mu}\right)^{t/\Delta t}
-\end{equation}
-and the initial growth rate is given by
-\begin{equation}
-r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right).
-\end{equation}
-
-
-
-
-\subsection{Probability of infection}
-
-In both the TSIR model and the hazard-based model, transition from the susceptible comparment, $S$, to the infected compartment, $I$, is represented as a product of number of susceptible individuals and probability of infection between two time steps $t$ and $t + \Delta t$.
-The TSIR model assumes that the probability of infection is a linear function of prevalence $I_t$.
-This formulation is based on the Euler approximation to the solution of the ordinary differential equation.
-On the other hand, the hazard-based model assumes that the probability of infection is an inverse exponential function of prevalence $I_t$.
-Besides their differences in the relationship between prevalence and probability of infection, there are two more assumptions that we need to consider: (1) force of infection remains constant over two time steps and (2) new susceptible individuals have zero probability of infection between the two time steps.
-
-
-
-\subsection{Infectious period}
-
-Geometric distribution with probability of $1-\exp(-\gamma \Delta t)$ and unit of $\Delta t$.
-Then, mean infectious period and generation interval is given by 
-\begin{equation}
-\frac{\Delta t}{1-\exp(-\gamma \Delta t)}.
-\end{equation}
-An important but often overlooked component is the variance of the distribution.
-Squared coefficient of variation for this distribution is equal to $\exp(-\gamma \Delta t)$, which necessarily depends on pre-specified time-step $\Delta t$.
-If we want to match the mean of the distribution to a fixed value $\mu$ regardless of our choices of $\Delta t$, we obtain 
-\begin{equation}
-\hat \gamma = - \frac{1}{\Delta t} \log\left(1 - \frac{\Delta t}{\mu}\right)
-\end{equation}
-Then,
-\begin{equation}
-\mathrm{CV}_{\tiny\textrm{Infectious period}}(\Delta t)^2 = 1 - \frac{\Delta t}{\mu}.
-\end{equation}
-
-We expect changes in variation in infectious period to affect variation in stochstic realizations.
-
-This means that the relationship between $r$ and $\mathcal R$ changes.
-For this generation-interval distribution, we have
-\begin{equation}
-\mathcal R = 1 + \frac{\exp(r) -1}{(1-\exp(-\gamma \Delta t)) }
-\end{equation}
-Substituting 
-\begin{equation}
-r = \frac{1}{\Delta t} \log \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right),
-\end{equation}
-as well as $\hat \gamma$, we get
-\begin{equation}
-\mathcal R = 1 + \frac{\mu}{\Delta t} \left(1 + \beta \Delta t - \frac{\Delta t}{\mu}\right)^{1/\Delta t}
-\end{equation}
-Then, we can obtain a relationship between $\mathcal R$ of a discrete-time system and that of a corresponding continuous time system, assuming that contact rate $\beta$ and mean generation-time $\mu$ are the same:
-\begin{equation}
-\mathcal R_{\tiny \textrm{discrete}} = 1 + \frac{\mu}{\Delta t} \left(1 + \frac{(\mathcal R_{\tiny \textrm{continuous}}  - 1) \Delta t }{\mu}\right)^{1/\Delta t}
-\end{equation}
-
-On the other hand, we may want to match choose $\beta$ and $\mu$ to match true $r$ and $\mathcal R$.
 
 \end{document}
