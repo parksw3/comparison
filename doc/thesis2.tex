@@ -57,11 +57,14 @@
 Seasonally-varying transmission rates drive irregular dynamics of childhood infections, such as measles.
 One way to infer transmission rates from a time series is to try to match the predicted dynamics of a model, whether deterministic or stochastic, with the observed dynamics.
 If a system is highly nonlinear and near chaotic, however, matching its time series can be difficult.
-Another way to approach this problem is to transform the time series and estimate transmission rates using a regression.
-In this study, we compare several different methods for estimating transmission rates against simulations and discuss how their assumptions affect their estimates of the transmission rates.
-We show that regression-based methods can correctly estimate the exact shape of the transmission rates but give biased estimates.
+Numerical integration of the state space via Monte Carlo methods allows us to overcome the issue of analyzing complex time series but can be computationally expensive.
+Another way to approach this problem is to transform the time series and estimate transmission rates using a regression;
+this can be done by using the time-series Susceptible-Individual-Recovered (TSIR) model popularized by Bjornstad, Finkenstadt, and Grenfell.
+In this study, we compare the TSIR method with other statistical models for estimating transmission rates.
+We use simulations to quantify their ability to infer unobserved transmission rates and study how their assumptions affect their inference.
+We show that regression-based methods, including the TSIR model, can correctly estimate the shape of the transmission rates but give biased estimates.
 Simulation-based methods are not able to infer the exact shape of the transmission rates precisely but give unbiased estimates of the transmission rates with good coverage properties.
-\swp{Come back}
+While regression-based methods can be useful for exploratory analyses, we suggest that Monte Carlo methods, coupled with rigorous model validation through simulations, should be used for any final analyses of epidemic time series.
 
 \pagebreak
 
@@ -285,13 +288,13 @@ Let $X_t = \{\mathbf{x}_{t, i} \,|\, i= 1, 2, \dots, n\}$ be the set of states (
 For the SIR model, each particle $\mathbf{x}_{t, i} \in X$ will consist of the number of susceptible individuals $S_t$ and the number of infected individuals $I_t$.
 Then, we can predict the state of each particle at next time reporting step $t+1$ using the process model: $h(\mathbf{x}_{t, i})$.
 Note that it may take several \emph{simulation} time steps to get to the next reporting time step.
-For each prediction $h(\mathbf{x}_{t, i})$, we can calcuate the likelihood $w_{t,i}$ of the observation at time $t+1$ and define marginal likelihood by taking the average: $\bar{w}_t$.
+For each prediction $h(\mathbf{x}_{t, i})$, we can calculate the likelihood $w_{t,i}$ of the observation at time $t+1$ and define marginal likelihood by taking the average: $\bar{w}_t$.
 Then, drawing $n$ weighted samples from the set $\{h(\mathbf{x}_{t, i}) \,|\, i = 1=2, \dots, n\}$, where the weight of each $h(\mathbf{x}_{t, i})$ is proportional to $w_i$, yields the next set of particles $X_{t+1}$.
 This algorithm can be repeated until the final reporting time step.
 Finally, the complete likelihood of the data is given by the product of the marginal likelihood at each time step: $\prod \bar{w}_{t}$.
 
 While Sequential Monte Carlo provides a straightforward way of approximating the likelihood for any process model that can be defined, it is still difficult fit a continuous-time stochastic model. 
-For example, it can take as long as 10 hours to simulate a measles times series for 20 years with a gillspie algorithm.
+For example, it can take as long as 10 hours to simulate a measles times series for 20 years with a Gillespie algorithm.
 Computing a likelihood with large number of particles will take more than a few days; 
 maximizing the likelihood will be practically impossible.
 
@@ -403,7 +406,7 @@ For now, we focus on the SIR model.
 \textbf{Comparison of incidence, prevalence, and mortality from dynamical and estimation perspective.}
 A: deterministic dynamics of incidence, mortality, and prevalence of the SIR model for a single outbreak (no natural birth/death and fixed transmission rate) when mean generation time is equal to reporting step.
 The parameters and initial conditions are $\beta = 2$, $\gamma = 1$, $N = 1 \times 10^5$, $I(0) = 10$, and $S(0) = N - 10$.
-B: dynamics of incidence, mortality and prevalence of the SIR model with sinusoidal transmission rate ($\beta(t) = b_0 (1 + b_1 \cos (2 \pi t/26))$) when mean generation time ie equal to reporting step.
+B: dynamics of incidence, mortality and prevalence of the SIR model with sinusoidal transmission rate ($\beta(t) = b_0 (1 + b_1 \cos (2 \pi t/26))$) when mean generation time is equal to reporting step.
 The parameters and initial conditions are $b_0 = 500/26$, $b_1 = 0.15$, $\gamma = 1$, $\mu = 1/(50 \times 26)$, $N = 5 \times 10^6$, $I(0) = 0.0001 N$, $S(0) = 0.05 N$.
 C, D, E: deviance difference (profile likelihood minus the maximum likelihood) of each parameter when incidence, mortality, and prevalence curves are fit to same time series using trajectory matching. 
 Grey dashed line represents the true value.
@@ -614,10 +617,7 @@ For our example, changing the time step from one-twentieth of the mean generatio
 This increase in the mean generation time is sufficient to introduce bias in our estimates and reduce coverage \citep{wallinga2006generation}.
 Using a coarser time scale is likely to increase bias and decrease coverage.
 This bias is not observed when we fit discrete-time compartmental SIR model via POMP because we adjust the rate parameter to match the mean generation time of the discrete distribution and the mean generation time of the continuous distribution \citep{he2009plug}.
-
 These results suggest that discretization of a continuous-time model should be done carefully.
-In particular, the simulation time scale should be separated from the reporting time scale.
-
 
 \subsection{Generation-interval distributions}
 
@@ -645,12 +645,12 @@ While regression methods, such as gradient matching or TSIR regression, can be u
 they rely on several assumptions which are weakly supported.
 In particular, our analyses suggest that the most problematic assumption of the TSIR regression is the power-law approximation to the probability of infection, which is the key component of the regression.
 Surprisingly, assumptions about susceptible dynamics, the shape of the generation-interval distribution, and the amount of process error appear to have relatively small effects on the inference.
-Nonetheless, we suggest that any formal analysis should be carried out using Monte Carlo methods that allow us to explore state space explicitly and model all sources of variations.
+Nonetheless, we suggest that any formal analysis should be carried out using state space methods that allow us to model all sources of variations.
 
-Finally, we suggest using simulations to test mathematical and statistical models of interest before analyzing real epidemic time series.
+Finally, we suggest using simulations to test mathematical and statistical models of interest before analyzing the real epidemic time series.
 Often, the state-of-art methods such as POMP \citep{king2015statistical}, are taken for granted;
-using simulations allows us to assess model formulations (e.g., parameteric forms for the probability of infection) and identify which of the model assumptions are likely to have large effect on the inference.
-
+using simulations allows us to assess model formulations (e.g., parametric forms for the probability of infection) and identify which model assumptions are likely to have important consequences on the inference.
+Rigorous model checking will help scientists make better inference about epidemic processes.
 
 \pagebreak
 
@@ -739,7 +739,7 @@ We decompose the residual variance into observation variance and process varianc
 We then use particle filtering to estimate the likelihood of the TSIR model using the transmission rates inferred from the TSIR regression.
 Both the infection process and the measurement models are assumed to follow a lognormal distribution, i.e., $\log i_{t+1} \sim \mathrm{Normal}(\log (\beta_t S_t i_t^\alpha/N_i), r \sigma^2)$ and $\log i_{t, \textrm{rep}} \sim \mathrm{Normal}(\log (i_{t}/\rho) , (1-r) \sigma^2)$, where $\sigma^2$ is the residual variance and $r$ is the proportion of process variance.
 Conditional simulations assume that the susceptible dynamics is known (estimated via susceptible reconstruction).
-Unconditinal simulations treat susceptible dynamics as a latent variable: $S_{t+1} = B_t + S_t - i_{t+1}$.
+Unconditional simulations treat susceptible dynamics as a latent variable: $S_{t+1} = B_t + S_t - i_{t+1}$.
 The circle represents the maximum likelihood estimate.
 Dashed lines represent the 95\% confidence region.
 }
