@@ -54,6 +54,15 @@
 \textbf{Abstract}
 \end{center}
 
+Seasonally-varying transmission rates drive irregular dynamics of childhood infections, such as measles.
+One way to infer transmission rates from a time series is to try to match the predicted dynamics of a model, whether deterministic or stochastic, with the observed dynamics.
+If a system is highly nonlinear and near chaotic, however, matching its time series can be difficult.
+Another way to approach this problem is to transform the time series and estimate transmission rates using a regression.
+In this study, we compare several different methods for estimating transmission rates against simulations and discuss how their assumptions affect their estimates of the transmission rates.
+We show that regression-based methods can correctly estimate the exact shape of the transmission rates but give biased estimates.
+Simulation-based methods are not able to infer the exact shape of the transmission rates precisely but give unbiased estimates of the transmission rates with good coverage properties.
+\swp{Come back}
+
 \pagebreak
 
 \begin{center}
@@ -78,12 +87,11 @@ Finally, I would like to thank my family for their love and support.
 
 \section{Introduction}
 
-Over the last few decades, a plethora of computational tools have been developed to study irregular patterns observed in epidemic time series, such as those of measles.
+Over the last few decades, a plethora of computational tools have been developed to study irregular patterns observed in epidemic time series, such as those of measles \citep{fine1982measles, grenfell1994measles, finkenstadt2000time, cauchemez2008likelihood, hooker2010parameterizing, xia2011feature, king2015statistical, fasiolo2016comparison}.
 Central to these studies are mechanistic models, which are sets of equations that represent our understanding of the underlying biological system \citep{breto2009time}.
 Mechanistic modeling of disease dynamics allows us to study the qualitative dynamics of a system and infer underlying process that drove the observed patterns in the data.
 For example, we now know that the complex dynamics of measles outbreaks are driven by seasonal transmission patterns \citep{earn2000simple, dalziel2016persistent}.
 
-%% read https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2607466/
 Major challenges in epidemiological modeling come from developing the actual model and parameterizing it.
 One must make an appropriate set of assumptions to balance generality, realism, and precision \citep{levins1966strategy}.
 These assumptions may depend on a system as well as an inferential tool.
@@ -585,7 +593,7 @@ It is also possible that we may not have enough power to estimate the true shape
 \section{Discussion}
 
 Estimating biologically realistic parameters of a model is central to the analysis of epidemic time series.
-Here, we compare several different methods for estimating the unobserved transmission rates of the SIR model for recurrent epidemics.
+Here, we compare several statistical methods for estimating the transmission rates of the SIR model for recurrent epidemics.
 Simple methods that do not make an explicit distinction between different sources of errors (e.g., process and observation error) give reasonable estimates but fail to capture uncertainty associated with their estimates.
 More sophisticated methods that explicitly account for these errors provide good estimates.
 However, as we increase the flexibility of the model (e.g., by allowing for the shape of the generation-interval distribution to vary), it becomes more difficult to estimate the true shape of the transmission rates.
@@ -628,6 +636,17 @@ Although ignoring observation error may not be as bad as ignoring process error 
 
 \section{Conclusions}
 
+We used the simple Susceptible-Infected-Recovered (SIR) model to compare some of the widely-used statistical methods for estimating transmission rates.
+In line with previous studies \citep{king2015avoidable, taylor2016stochasticity}, we argue again that fitting deterministic models should be avoided.
+While regression methods, such as gradient matching or TSIR method, can be useful for preliminary analyses, 
+they rely on several assumptions which may be inappropriate.
+Any formal inference should be carried out using Monte Carlo methods that allow us to model all sources of variations separately.
+
+Finally, we suggest using simulations to test mathematical and statistical models of interest before analyzing real epidemic time series.
+Often, the state-of-art methods such as POMP \citep{king2015statistical}, are taken for granted;
+using simulations allows us to assess statistical power of our model and identify which of the model assumptions are likely to have large effect on the inference.
+In order to estimate the transmission rates of measles, the shape of the generation-interval distribution 
+\swp{Come back}
 
 
 \pagebreak
