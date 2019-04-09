@@ -106,7 +106,7 @@ Likewise, it is possible to match gradients of the system \eref{sir} with the ob
 These methods are computationally efficient and easy to implement.
 
 Monte Carlo methods are computationally demanding but allow us to model \emph{all} sources of variation (e.g., observation, demographic, and environmental stochasticity) explicitly.
-In particular, Sequential Monte Carlo methods (also known as particle filtering) has been successfully applied in mechanistic analyses of epidemic time series \citep{he2009plug, he2011mechanistic, didelot2017model}; its ability to approximate the likelihood through a series of simulations provides a powerful technique for testing hypotheses and inferring underlying parameters \citep{ionides2006inference, breto2009time, king2015statistical}.
+In particular, Sequential Monte Carlo methods (also known as particle filtering) has been successfully applied in mechanistic analyses of epidemic time series \citep{ionides2006inference, breto2009time, he2009plug, he2011mechanistic, didelot2017model}; its ability to approximate the likelihood through a series of simulations provides a powerful technique for testing hypotheses and inferring underlying parameters \citep{ionides2006inference, breto2009time, king2015statistical}.
 Approximate likelihood obtained by particle filtering can be maximized by iterated filtering \citep{ionides2011iterated, ionides2015inference} or can be incorporated into a Bayesian scheme as a particle Monte Carlo Markov Chain (MCMC) \citep{andrieu2010particle}.
 
 Unlike any of the previously discussed methods, which can be used to estimate parameters of a wide range of systems, the time series SIR (TSIR) method seeks to estimate time-varying transmission rates of fully immunizing childhood infections, specifically \citep{finkenstadt2000time}.
@@ -122,11 +122,11 @@ varicella \citep{jackson2014effects, baker2018dynamic},
 and Hand, Foot, and Mouth Disease \citep{takahashi2016hand, van2016hand, du2017estimating, takahashi2018epidemic}.
 So what makes it work so well?
 
-\swp{Come back}
-The main purpose of this project is to compare the TSIR method against other methods.
-We begin by discussing types of epidemic time series (incidence, prevalence, mortality) and necessary assumptions behind each method, including TSIR.
-Then, we compare their ability to estimate transmission rates by testing them against simulations.
-Finally, we provide practical guidance for estimating parameters of the SIR model.
+The purpose of this project is twofold:
+(1) to understand how different model assumptions affect our inference and
+(2) to compare each method's ability to estimate transmission rates.
+We use stochastic simulations to assess model assumptions and performances.
+Finally, we give practical guidance for developing epidemiological models and inferring their parameters.
 
 \section{Methods}
 
@@ -360,16 +360,19 @@ j_\ell(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(
 S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
 \end{aligned}
 \end{equation}
-\swp{Write down likelihood}
-
-We model the generation-interval distribution using a negative binomial distribution:
+Finally, the observation likelihood can be written as follows:
 \begin{equation}
-g(t) \propto t^{\tsub{G}{shape}} \exp(-t/\tsub{G}{scale}),
+i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}\left(\rho \sum_{k=1}^{\lceil\tsub{t}{rep}/\Delta t\rceil} j_{\ell-k+1}(t) , \tsub{\phi}{obs}\right).
+\end{equation}
+
+We model the generation-interval distribution using a truncated negative binomial distribution:
+\begin{equation}
+g(t) \propto t^{\tsub{G}{shape}} \times \exp(-t/\tsub{G}{scale}),
 \end{equation}
 where $g(t)$ is normalized to sum to one.
 For estimation purposes, we use an alternate parameterization $(\tsub{G}{mean}, \tsub{G}{var})$ such that $\tsub{G}{scale} = \tsub{G}{var}/\tsub{G}{mean}$ and $\tsub{G}{shape} = \tsub{G}{mean}/\tsub{G}{scale}$.
 For sufficiently small $\Delta t$, $\tsub{G}{mean}$ and $\tsub{G}{var}$ corresponds to mean and variance of the generation-interval distribution.
-Here, we use a simulation time step $\Delta t$ of one-twentieth of the mean generation interval and $\ell = 120$; this allows the generation-interval distribution to span over 6 generations.
+Here, we use a simulation time step $\Delta t$ of one-twentieth of the mean generation interval (equivalently, one-twentieth of the reporting step $\tsub{t}{rep}$) and $\ell = 120$; this allows the generation-interval distribution to span over 6 generations.
 
 \subsection{Splines}
 
@@ -392,8 +395,7 @@ Their deterministic dynamics are sufficiently similar that we expect these three
 However, this is not true for more complicated models.
 For a more realistic model with an exposed period (SEIR model), the incidence is comparable to prevalence when reporting time step is equal to mean \emph{infectious period} rather than mean \emph{generation time}.
 We are not able to see this distinction in the SIR model because it assumes that the mean infectious period is equal mean generation interval.
-For now, we focus on the SIR model. 
-\swp{We revisit this point in Discussion.}
+For now, we focus on the SIR model.
 
 \begin{figure}[!ht]
 \includegraphics[width=\textwidth]{../figure/compare_profile_likelihood.pdf}
@@ -403,7 +405,7 @@ A: deterministic dynamics of incidence, mortality, and prevalence of the SIR mod
 The parameters and initial conditions are $\beta = 2$, $\gamma = 1$, $N = 1 \times 10^5$, $I(0) = 10$, and $S(0) = N - 10$.
 B: dynamics of incidence, mortality and prevalence of the SIR model with sinusoidal transmission rate ($\beta(t) = b_0 (1 + b_1 \cos (2 \pi t/26))$) when mean generation time ie equal to reporting step.
 The parameters and initial conditions are $b_0 = 500/26$, $b_1 = 0.15$, $\gamma = 1$, $\mu = 1/(50 \times 26)$, $N = 5 \times 10^6$, $I(0) = 0.0001 N$, $S(0) = 0.05 N$.
-C, D, E: deviance difference (profile likelihood minus the maximum likelihood) of each parameter when incidence, mortality, and prevalence are fit to same time series using trajectory matching. 
+C, D, E: deviance difference (profile likelihood minus the maximum likelihood) of each parameter when incidence, mortality, and prevalence curves are fit to same time series using trajectory matching. 
 Grey dashed line represents the true value.
 } 
 \label{fig:incidence}
@@ -557,7 +559,7 @@ Bias and RMSE are computed on a log scale.
 We find that the Monte Carlo methods (whether the model is represented as a compartmental model or a renewal equation) provide best estimates (\fref{coverage}).
 Estimates of the transmission rates based on Sequential Monte Carlo give good coverage and has the least bias and RMSE.
 However, in order for the renewal equation model to attain nominal coverage, the simulation time step $\Delta t$ has to be as fine as one-twentieth of the mean generation length; 
-simulating an epidemic at one-tenth of the mean generation length results in \swp{70\%} coverage.
+simulating an epidemic at one-tenth of the mean generation length results in 60\% coverage.
 While trajectory matching can fit a continuous-time model without having to rely on a discretization process, it gives a slightly lower coverage than the nominal probability.
 
 Both regression-based methods (gradient matching and TSIR regression) perform similarly in terms of RMSE.
@@ -572,7 +574,7 @@ Finally, we note the summary statistics for the TSIR method are based on correct
 \begin{figure}[!t]
 \includegraphics[width=\textwidth]{../figure/compare_transmission.pdf}
 \caption{
-\textbf{Comparison of the estimates of a time-varying transmission rate from different method.}
+\textbf{Comparison of the estimates of time-varying transmission rates from different method.}
 The red line represents the true transmission rates.
 The black lines represent the estimated transmission rates from 100 simulations.
 }
@@ -587,8 +589,7 @@ Monte Carlo methods give more variable estimates.
 Estimates generally follow a sinusoidal shape -- transmission rates are higher near the boundaries and lower in the middle -- but are `wigglier'.
 Fitting the renewal equation gives much more variable estimates of the transmission rates because the renewal equation accounts for extra uncertainty in the system by allowing for the variance of the generation-interval distribution to vary.
 These results suggest that small changes in the transmission rate are difficult to identify in the presence of process error.
-In fact, we find similar patterns when we try to fit the TSIR model without using splines (see Appendix A.3). \swp{TODO}
-It is also possible that we may not have enough power to estimate the true shape of the transmission rates from 9 years of data (equivalent to 234 data points assuming biweekly reporting).
+In fact, we find similar patterns when we try to fit the TSIR model without using splines (see Appendix A.3). It is also possible that we may not have enough power to estimate the true shape of the transmission rates from 9 years of data (equivalent to 234 data points assuming biweekly reporting).
 
 \section{Discussion}
 
@@ -605,7 +606,7 @@ Fitting a continuous-time stochastic model to an epidemic time series is practic
 Many inferential frameworks, instead, rely on discrete-time approximations to estimate the parameters of the corresponding continuous-time model \citep{finkenstadt2002stochastic, king2015statistical, champredon2018two, li2018fitting}.
 However, the effects of these discrete-time approximations are rarely discussed.
 We show that the discretization of a continuous-time model can make a huge difference in the inference.
-In particular, the renewal equation has low coverage (\swp{approx70\%}) when the simulation time step is one-tenth of the mean generation time.
+In particular, the renewal equation has low coverage ($\approx 60\%$) when the simulation time step is one-tenth of the mean generation time.
 
 The low coverage is likely to be driven by changes in the underlying generation-interval distribution.
 As the discretization time step changes, mean and variance of the distribution also changes even when the parameters of the distributions are held constant.
@@ -660,7 +661,7 @@ In order to estimate the transmission rates of measles, the shape of the generat
 \appendix
 \renewcommand{\thesection}{\Alph{section}}
 \renewcommand{\thesubsection}{A.\arabic{subsection}}
-
+\renewcommand\thefigure{A.\arabic{subsection}}    
 \section{Appendix}
 
 \subsection{Relating incidence, mortality, and prevalence}
@@ -669,17 +670,17 @@ First, recall that mortality case can be written as
 \begin{equation}
 \int_{t-\tsub{t}{rep}}^{t} \gamma I ds.
 \end{equation}
-When reporting period is equal to mean generation time, i.e., $\tsub{t}{rep} = 1/\gamma$, 
+When reporting time step is equal to mean generation time, i.e., $\tsub{t}{rep} = 1/\gamma$, 
 it follows that:
 \begin{equation}
 \int_{t-\tsub{t}{rep}}^{t} \gamma I ds \approx \gamma I(t-\tsub{t}{rep}) \tsub{t}{rep} = I(t-\tsub{t}{rep})
 \end{equation}
-Likewise, we can derive a similar relation for incidence:
+Likewise, we can derive a similar relation for incidence under the same condition:
 \begin{equation}
 \begin{aligned}
 I(t+\tsub{t}{rep}) &= I(t) + \int_{t}^{t+\tsub{t}{rep}} \frac{dI(s)}{ds} ds\\
-&= I(t) + \int_{t}^{t+\tsub{t}{rep}} \beta(s) S \frac{I}{N} ds - \int_{t}^{t+\tsub{t}{rep}}\\
-&\approx \int_{t}^{t+\tsub{t}{rep}} \beta(s) S \frac{I}{N} ds
+&= I(t) + \int_{t}^{t+\tsub{t}{rep}} \beta(s) S \frac{I}{N} ds - \int_{t}^{t+\tsub{t}{rep}} \gamma I ds\\
+&\approx \int_{t}^{t+\tsub{t}{rep}} \beta(s) S \frac{I}{N} ds = i(t + \tsub{t}{rep})
 \end{aligned}
 \end{equation}
 Here, we assumed that individuals leaving infected class $I$ from natural mortality is negligible over the reporting period.
@@ -687,14 +688,61 @@ Here, we assumed that individuals leaving infected class $I$ from natural mortal
 \pagebreak
 \subsection{Fitting incidence, mortality, and prevalence when mean generation time is known}
 
+\begin{figure}[!h]
+\includegraphics[width=\textwidth]{../figure/compare_profile_likelihood_exact.pdf}
+\caption{
+\textbf{Comparison of fitting incidence, prevalence, and mortality curves when mean generation time is known.}
+Deviance difference (profile likelihood minus the maximum likelihood) of each
+parameter when incidence, mortality, and prevalence curves are fit to same time series
+using trajectory matching. 
+We assume that the mean generation time is known.
+Grey dashed line represents the true value.
+}
+\end{figure}
+
 \pagebreak
 \subsection{Fitting TSIR model without cyclic splines}
+
+\begin{figure}[!h]
+\includegraphics[width=\textwidth]{../figure/tsir_transmission.pdf}
+\caption{
+\textbf{Estimates of time-varying transmission rates using TSIR without cyclic basis.}
+The red line represents the true transmission rates. 
+The black lines represent the estimated transmission rates from 100 simulations.
+}
+\end{figure}
 
 \pagebreak
 \subsection{The effects of the shape of generation-interval distributions on measles dynamics}
 
+\begin{figure}[!h]
+\includegraphics[width=\textwidth]{../figure/test_renewal_distribution.pdf}
+\caption{
+\textbf{Effects of the shape of the generation-interval distribution on the dynamics of recurrent epidemics.}
+The stochastic renewal equation, represented as a Markov process, is simulated with measles-like parameters by changing coefficient variation (CV) of the generation-interval distribution.
+Ribbons show 95\% quantiles of the simulated incidence report.
+Lines show the median of the simulated incidence report.
+}
+\end{figure}
+
 \pagebreak
 \subsection{Process and observation error}
+
+\begin{figure}[!h]
+\includegraphics[width=\textwidth]{../figure/compare_conditional_likelihood.pdf}
+\caption{
+\textbf{Likelihood (slice) surface for density dependence parameter $\alpha$ and proportion of process variance.}
+For each $\alpha$, we fit a TSIR model to measles time series from Boston.
+We decompose the residual variance into observation variance and process variance.
+We then use particle filtering to estimate the likelihood of the TSIR model using the transmission rates inferred from the TSIR regression.
+Both the infection process and the measurement models are assumed to follow a lognormal distribution, i.e., $\log i_{t+1} \sim \mathrm{Normal}(\log (\beta_t S_t i_t^\alpha/N_i), r \sigma^2)$ and $\log i_{t, \textrm{rep}} \sim \mathrm{Normal}(\log (i_{t}/\rho) , (1-r) \sigma^2)$, where $\sigma^2$ is the residual variance and $r$ is the proportion of process variance.
+Conditional simulations assume that the susceptible dynamics is known (estimated via susceptible reconstruction).
+Unconditinal simulations treat susceptible dynamics as a latent variable: $S_{t+1} = B_t + S_t - i_{t+1}$.
+The circle represents the maximum likelihood estimate.
+Dashed lines represent the 95\% confidence region.
+}
+\end{figure}
+
 
 
 

@@ -1,5 +1,11 @@
 load("../data/gillespie_sinusoidal_data.rda")
 
+fixfun <- function(beta, alpha, N, I) {
+	mI <- mean(I)
+	
+	-log(1 - beta * mI^alpha/N) * N/mI
+}
+
 N <- 5e6
 nsim <- length(datalist)
 
@@ -76,7 +82,7 @@ for (i in 1:nsim) {
 	fitlist[[i]] <- cdata
 	translist[[i]] <- data.frame(
 		time=1:26,
-		beta=exp(predict(lfit, newdata = data.frame(biweek=factor(1:26), logIprev=0, offterm=0)))
+		beta=fixfun(exp(predict(lfit, newdata = data.frame(biweek=factor(1:26), logIprev=0, offterm=0))), coef(lfit)[[27]], N, I)
 	)
 }
 

@@ -61,6 +61,23 @@ load("../sir_fit/tsir_fit_raw.rda")
 
 tsir_raw <- bind_rows(fitlist, .id="sim")
 
+templist <- list()
+for (i in 0:9) {
+	fn <- paste0("../sir_fit/pomp_renewal_fit_", i, ".rda")
+	
+	load(fn)
+	
+	templist[[i+1]] <- fitlist %>%
+		bind_rows(.id="sim") %>%
+		mutate(sim=as.character(as.numeric(sim)+i*10))
+}
+
+renewal_1_10 <- bind_rows(templist)
+
+renewal_1_10 %>%
+	group_by(param) %>%
+	summarize(mean(coverage))
+
 alldata_sir <- bind_rows(allcover_sir, .id="type") %>%
 	mutate(sim="gillespie")
 
