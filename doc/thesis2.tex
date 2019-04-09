@@ -423,7 +423,7 @@ On the other hand, incidence report no longer matches prevalence report when rep
 Fitting incidence and mortality curve yields similar estimates of the reporting rate $\rho$ because they both contain equivalent information about the final size of an epidemic: total \emph{true} incidence and total \emph{true} mortality is equal to the final size of an epidemic.
 
 Even when mean generation time is exactly known, we find that estimates of transmission rate $\beta$ and reporting rate $\rho$ depends on our assumptions about the time series.
-We find that fitting mortality and prevalence curves give consistent estimates of both $\beta$ and $\rho$, whereas fitting incidence curve gives similar but still different estimates (see Appendix A.2). \swp{TODO}
+We find that fitting mortality and prevalence curves give consistent estimates of both $\beta$ and $\rho$, whereas fitting incidence curve gives similar but still different estimates (see Appendix A.2).
 Any analysis of an epidemic time series should carefully consider what the time series might actually represent.
 
 \subsection{Susceptible reconstruction}
@@ -594,60 +594,62 @@ In fact, we find similar patterns when we try to fit the TSIR model without usin
 \section{Discussion}
 
 Estimating biologically realistic parameters of a model is central to the analysis of epidemic time series.
-Here, we compare several statistical methods for estimating the transmission rates of the SIR model for recurrent epidemics.
+Here, we compare several different statistical methods for estimating the transmission rates of recurrent epidemics using the SIR model.
 Simple methods that do not make an explicit distinction between different sources of errors (e.g., process and observation error) give reasonable estimates but fail to capture uncertainty associated with their estimates.
-More sophisticated methods that explicitly account for these errors provide good estimates.
-However, as we increase the flexibility of the model (e.g., by allowing for the shape of the generation-interval distribution to vary), it becomes more difficult to estimate the true shape of the transmission rates.
-The TSIR method works reasonably well under several strong assumptions.
+Monte Carlo methods which explicitly account for these errors give good estimates and coverage.
+As we increase the flexibility of the model (e.g., by allowing for the shape of the generation-interval distribution to vary), it becomes more difficult to estimate the true shape of the transmission rates.
+While regression-based methods are better at estimating the shape of the transmission rates, they rely on strong assumptions and can be subject to strong bias.
 
 \subsection{Discretization of a continuous-time model}
 
 Fitting a continuous-time stochastic model to an epidemic time series is practically impossible.
 Many inferential frameworks, instead, rely on discrete-time approximations to estimate the parameters of the corresponding continuous-time model \citep{finkenstadt2002stochastic, king2015statistical, champredon2018two, li2018fitting}.
 However, the effects of these discrete-time approximations are rarely discussed.
-We show that the discretization of a continuous-time model can make a huge difference in the inference.
-In particular, the renewal equation has low coverage ($\approx 60\%$) when the simulation time step is one-tenth of the mean generation time.
+We show that the discretization of a continuous-time model can make a huge difference in our inference.
+For example, the renewal equation has low coverage for the reproductive number ($\approx 60\%$) when the simulation time step is one-tenth of the mean generation time.
 
 The low coverage is likely to be driven by changes in the underlying generation-interval distribution.
 As the discretization time step changes, mean and variance of the distribution also changes even when the parameters of the distributions are held constant.
 For our example, changing the time step from one-twentieth of the mean generation time to one-tenth increases the mean generation time by 2.5\%.
-This increase in the mean generation time is sufficient to introduce a small bias in our estimates and reduce coverage \citep{wallinga2006generation}.
+This increase in the mean generation time is sufficient to introduce bias in our estimates and reduce coverage \citep{wallinga2006generation}.
 Using a coarser time scale is likely to increase bias and decrease coverage.
 This bias is not observed when we fit discrete-time compartmental SIR model via POMP because we adjust the rate parameter to match the mean generation time of the discrete distribution and the mean generation time of the continuous distribution \citep{he2009plug}.
 
 These results suggest that discretization of a continuous-time model should be done carefully.
-In particular, we prefer to separate the simulation time step from the reporting time step.
+In particular, the simulation time scale should be separated from the reporting time scale.
+
 
 \subsection{Generation-interval distributions}
 
 We expect a realistic generation-interval distribution of measles to be narrower than the exponential distribution but wider than the fixed distribution.
 We try to bridge these two extreme assumptions by using the renewal equation.
 However, the renewal equation does not perform better because we test our methods on Gillespie simulations of the SIR model, which assumes an exponentially decreasing generation-time distribution.
-While we might expect the renewal equation to perform better against real data, simulating the renewal equation with various shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics (see Appendix A.4). \swp{TODO}
-These results are consistent with several previous studies that reported that using non-exponential distributions made small differences to their conclusion \citep{he2009plug}. \swp{Confirm}.
-Based on these results, it is not clear whether it is worth estimating the shape of the generation-interval distribution at the expense of power to estimate the transmission rates.
+While we might expect the renewal equation to perform better against real data, simulating the renewal equation with narrower shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics (see Appendix A.4).
+These results are consistent with previous analysis of measles time series that reported that using non-exponential distributions made small differences to their conclusion \citep{he2009plug}.
+Based on these results, we conclude that trying to estimate the shape of the generation-interval distribution at the expense of power to estimate the transmission rates may not be worth the trouble for measles-like diseases.
 
 \subsection{Process and observation error}
 
 Our study suggests that the assumptions about the amount of process and observation error affect the uncertainty of our inference.
 For weakly nonlinear systems with large observation error, not making this distinction may not have large effects on the inference \citep{ma2014estimating}.
 However, for highly nonlinear and stochastic systems, such as measles, assuming that there is only observation error leads to over-confidence \citep{king2015avoidable, taylor2016stochasticity}.
-On the other hand, assuming that there is only process error could lead to under-confidence (\swp{Fig?}).
-Although ignoring observation error may not be as bad as ignoring process error (see Appendix A.5) \swp{TODO}, any formal analyses should consider different sources of errors explicitly.
+Assuming that there is only process error seems to result in under-confidence (\fref{coverage}).
+Although variance decomposition of the TSIR regression based on the measles time series from Boston suggests that most of the variability is driven by process noise (see Appendix A.5), 
+any potential source of variability should not be neglected.
 
 \section{Conclusions}
 
-We used the simple Susceptible-Infected-Recovered (SIR) model to compare some of the widely-used statistical methods for estimating transmission rates.
+We used a simple Susceptible-Infected-Recovered (SIR) model to compare some of the widely-used statistical methods for estimating transmission rates of recurrent epidemics.
 In line with previous studies \citep{king2015avoidable, taylor2016stochasticity}, we argue again that fitting deterministic models should be avoided.
-While regression methods, such as gradient matching or TSIR method, can be useful for preliminary analyses, 
-they rely on several assumptions which may be inappropriate.
-Any formal inference should be carried out using Monte Carlo methods that allow us to model all sources of variations separately.
+While regression methods, such as gradient matching or TSIR regression, can be useful for preliminary analyses, 
+they rely on several assumptions which are weakly supported.
+In particular, our analyses suggest that the most problematic assumption of the TSIR regression is the power-law approximation to the probability of infection, which is the key component of the regression.
+Surprisingly, assumptions about susceptible dynamics, the shape of the generation-interval distribution, and the amount of process error appear to have relatively small effects on the inference.
+Nonetheless, we suggest that any formal analysis should be carried out using Monte Carlo methods that allow us to explore state space explicitly and model all sources of variations.
 
 Finally, we suggest using simulations to test mathematical and statistical models of interest before analyzing real epidemic time series.
 Often, the state-of-art methods such as POMP \citep{king2015statistical}, are taken for granted;
-using simulations allows us to assess statistical power of our model and identify which of the model assumptions are likely to have large effect on the inference.
-In order to estimate the transmission rates of measles, the shape of the generation-interval distribution 
-\swp{Come back}
+using simulations allows us to assess model formulations (e.g., parameteric forms for the probability of infection) and identify which of the model assumptions are likely to have large effect on the inference.
 
 
 \pagebreak
