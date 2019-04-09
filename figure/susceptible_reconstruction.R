@@ -188,7 +188,7 @@ g5 <- ggplot(tsir_Z_data_case) +
 	geom_line(data=true_Z, aes(time, value), col="grey", lwd=3, alpha=0.7) +
 	geom_line(aes(time, value, col=Reporting, lty=Population), lwd=1) +
 	scale_y_continuous("Susceptible dynamics") +
-	scale_x_continuous("Time (generations)") +
+	scale_x_continuous("Time (generations)", expand=c(0, 0)) +
 	facet_wrap(~Population) +
 	theme(
 		strip.background = element_blank(),

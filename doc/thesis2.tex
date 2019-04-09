@@ -54,7 +54,8 @@
 \textbf{Abstract}
 \end{center}
 
-Seasonally-varying transmission rates drive irregular dynamics of childhood infections, such as measles.
+Seasonally-varying transmission rates drive irregular patterns in the spread of childhood diseases, such as measles.
+However, knowing the exact patterns of transmission is difficult.
 One way to infer transmission rates from a time series is to try to match the predicted dynamics of a model, whether deterministic or stochastic, with the observed dynamics.
 If a system is highly nonlinear and near chaotic, however, matching its time series can be difficult.
 Numerical integration of the state space via Monte Carlo methods allows us to overcome the issue of analyzing complex time series but can be computationally expensive.
@@ -64,7 +65,7 @@ In this study, we compare the TSIR method with other statistical models for esti
 We use simulations to quantify their ability to infer unobserved transmission rates and study how their assumptions affect their inference.
 We show that regression-based methods, including the TSIR model, can correctly estimate the shape of the transmission rates but give biased estimates.
 Simulation-based methods are not able to infer the exact shape of the transmission rates precisely but give unbiased estimates of the transmission rates with good coverage properties.
-While regression-based methods can be useful for exploratory analyses, we suggest that Monte Carlo methods, coupled with rigorous model validation through simulations, should be used for any final analyses of epidemic time series.
+While regression-based methods can be useful for exploratory analyses, we suggest that Monte Carlo methods, coupled with rigorous model checking through simulations, should be used for any final analyses of epidemic time series.
 
 \pagebreak
 
@@ -169,7 +170,7 @@ Then, true incidence of the SIR model \eref{sir} between time $t$ and $t-\tsub{t
 \begin{equation}
 i_t = \int_{t-\tsub{t}{rep}}^{t} \beta(s) S \frac{I}{N} ds.
 \end{equation}
-Similarly, true mortality, which is defined as the number of individuals that died (or recovered for measles) during a reporting period, can be obtained by integrating total death rate over the reporting period:
+Similarly, true mortality, which is defined as the number of individuals that died (or removed) during a reporting period, can be obtained by integrating total death rate over the reporting period:
 \begin{equation}
 m_t = \int_{t-\tsub{t}{rep}}^{t} \gamma I ds.
 \end{equation}
@@ -178,14 +179,14 @@ this corresponds to the state variable $I$.
 Incidence, mortality, and prevalence for a stochastic simulation are defined in the same manner.
 
 Reported incidence, mortality, and prevalence cases are drawn from a beta-binomial distribution with reporting rate $\rho$, dispersion parameter $\tsub{\theta}{rep}$, and their corresponding true values \citep{morris1997disentangling}.
-Unless noted otherwise, we use $\tsub{\theta}{rep} = 10$ throughout simulations.
+Unless noted otherwise, we use $\rho = 0.7$ and $\tsub{\theta}{rep} = 10$ throughout simulations.
 Here, we assume that cases are reported instantaneously; 
 a more realistic model can incorporate a delay between infection time and reporting time (e.g., infected individuals are likely to report after symptom onset but before recovery).
 We do not explore these ideas explicitly.
 
 Instead, we focus on how different assumptions about an epidemic time series (whether it represents incidence, mortality, or prevalence) affect our inference.
 While this question was initially motivated by the TSIR framework, in which incidence is assumed to be equal to prevalence when reporting time is equal to mean generation time, 
-misclassification of epidemic time series is not rare.
+inconsistent classification of an epidemic time series is not rare.
 For example, \cite{he2009plug} assume that incidence is measured upon recovery whereas \cite{hooker2010parameterizing, althaus2014estimating} assume that incidence is measured upon transition from latent to infectious period.
 Understanding these differences is crucial in order to correctly estimate underlying parameters as well as their associated uncertainties.
 For all other purposes, we use the incidence time series throughout this study.
@@ -194,7 +195,7 @@ For all other purposes, we use the incidence time series throughout this study.
 
 \subsubsection*{Time-series SIR model}
 
-The time-series SIR (TSIR) method was developed by \cite{finkenstadt2000time} to estimate seasonally varying transmission rates of measles.
+The time-series SIR (TSIR) method was developed to estimate seasonally varying transmission rates of measles \citep{finkenstadt2000time}.
 The TSIR method begins by discretizing the infection process of the SIR model, assuming that disease generation time is equal to reporting interval:
 \begin{equation}\label{eq:tsir_dynamics}
 \begin{aligned}
@@ -247,10 +248,10 @@ Instead, parameters can be estimated by fitting a non-parametric regression mode
 Therefore, all state variables must be observed in order to apply gradient matching.
 
 In practice, it is difficult to observe all state variables of an epidemic model, even for simple models such as the SIR model.
-When either incidence or mortality are reported, \emph{no} relevant state variables are observed.
+When either incidence or mortality are reported, none of the relevant state variables are observed.
 Nonetheless, it is still possible to estimate the transmission rates of the SIR model using gradient matching by making similar assumptions as the TSIR model.
-Here, we briefly outline the estimation process;
-note that the purpose of this section is to introduce the method, rather than to provide a rigorous justification of the statistical model.
+Here, we briefly outline the estimation process.
+Note that the purpose of this section is to introduce the method, rather than to provide a rigorous justification of the statistical model.
 
 First, we begin by assuming that the mean generation time is equal to the length of reporting time step and that incidence is proportional to prevalence, i.e., $i_t = a I_t$ for some $a > 0$. 
 This assumption is slightly weaker than the conditions for the TSIR method.
@@ -278,7 +279,7 @@ When transmission varies over time, we can either (1) model transmission rate as
 \frac{d f(t)}{dt} + (\gamma + \mu) \sim \mathrm{Normal}\left(\exp \left(\log \beta_t + \log S_t\right), \sigma^2\right),
 \end{equation}
 where log number of susceptible individuals $\log S_t$ is treated as an offset term and the log transmission rate can be estimated is estimated as a function of time of year using a nonparametric regression.
-Here, we mainly focus on the last method.
+Here, we mainly focus on the last method because we want to be able to estimate transmission rates as a smooth function.
 
 \subsubsection*{Sequential Monte Carlo}
 
@@ -319,7 +320,9 @@ Again, we define observation likelihood using a negative-binomial distribution:
 \begin{equation}
 i_{t, {\tiny \textrm{rep}}} \sim \mathrm{NegBin}(\rho (C(t) - C(t - \tsub{t}{rep})) , \tsub{\phi}{obs}).
 \end{equation}
-This model is implemented in the R package \texttt{POMP} \citep{king2015statistical}.
+
+We implement this model in the R package \texttt{POMP} \citep{king2015statistical}.
+Maximum likelihood estimation is performed using iterated filtering 2 \citep{ionides2015inference}.
 
 \subsubsection*{Renewal equation}
 
@@ -348,7 +351,6 @@ i(t + \Delta t) &\sim \mathrm{Binomial}\left(F_{S}(t), \frac{\phi(t)}{\phi(t) + 
 S(t + \Delta t) &= B(t) + S(t) - F_{S}(t)
 \end{aligned}
 \end{equation}
-This model can be fitted using a Bayesian machine such as JAGS \citep{plummer2003jags}, NIMBLE \citep{de2017programming}, and Stan \citep{carpenter2017stan} (see \cite{li2018fitting} for comparison across these platforms).
 
 In order to make a fair comparison (without relying on a Bayesian prior), we take a further step to translate this model into a Markov process such that it can be used with particle filtering.
 We define a set of new state variables $j_1, j_2, \dots, j_\ell$ such that $j_k(t)$ corresponds to $i(t- (\ell-k) \Delta t)$.
@@ -377,6 +379,10 @@ For estimation purposes, we use an alternate parameterization $(\tsub{G}{mean}, 
 For sufficiently small $\Delta t$, $\tsub{G}{mean}$ and $\tsub{G}{var}$ corresponds to mean and variance of the generation-interval distribution.
 Here, we use a simulation time step $\Delta t$ of one-twentieth of the mean generation interval (equivalently, one-twentieth of the reporting step $\tsub{t}{rep}$) and $\ell = 120$; this allows the generation-interval distribution to span over 6 generations.
 
+We implement this model in the R package \texttt{POMP} \citep{king2015statistical}.
+Maximum likelihood estimation is performed using iterated filtering 2 \citep{ionides2015inference}.
+We note that this model can be also fitted using a Bayesian machine such as JAGS \citep{plummer2003jags}, NIMBLE \citep{de2017programming}, and Stan \citep{carpenter2017stan} (see \cite{li2018fitting} for comparison across these platforms).
+
 \subsection{Splines}
 
 In order to estimate time-varying transmission rates as a smooth function of time, we model transmission rate $\beta(t)$ using a spline \citep{hooker2010parameterizing}:
@@ -392,7 +398,7 @@ For regression-based methods (TSIR and gradient matching), we allow the number o
 
 \subsection{Types of epidemic time series}
 
-When reporting step is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
+When reporting time step is equal to mean generation time, incidence and prevalence are often assumed to be equivalent (\fref{incidence}).
 In fact, we can show that incidence, prevalence, and mortality are nearly equivalent for simple SIR model \eref{sir} under Euler approximation when reporting step is equal to mean generation time (see Appendix A.1).
 Their deterministic dynamics are sufficiently similar that we expect these three reports to be nearly indistinguishable from each other when demographic stochasticity and observation error is introduced.
 However, this is not true for more complicated models.
@@ -467,7 +473,7 @@ Estimates of susceptible dynamics appear to be robust regardless of the regressi
 \caption{
 \textbf{Estimates of susceptible dynamics and reporting rate under different scenarios.}
 Susceptible reconstruction is performed on a simulated time series under different scenarios (thick grey lines represent the true values).
-Spline regression is used throughout these simulations.
+Spline regression is used throughout these simulations to estimate the reporting rate.
 }
 \label{fig:tsircomp}
 \end{figure}
@@ -596,7 +602,7 @@ In fact, we find similar patterns when we try to fit the TSIR model without usin
 
 \section{Discussion}
 
-Estimating biologically realistic parameters of a model is central to the analysis of epidemic time series.
+Estimating biologically realistic parameters of a mechanistic model is central to the analysis of epidemic time series.
 Here, we compare several different statistical methods for estimating the transmission rates of recurrent epidemics using the SIR model.
 Simple methods that do not make an explicit distinction between different sources of errors (e.g., process and observation error) give reasonable estimates but fail to capture uncertainty associated with their estimates.
 Monte Carlo methods which explicitly account for these errors give good estimates and coverage.
@@ -621,10 +627,10 @@ These results suggest that discretization of a continuous-time model should be d
 
 \subsection{Generation-interval distributions}
 
-We expect a realistic generation-interval distribution of measles to be narrower than the exponential distribution but wider than the fixed distribution.
+We expect a realistic generation-interval distribution of measles to be narrower than the exponential distribution but wider than the fixed distribution \citep{simpson1952infectiousness, fraser2007estimating, cori2013new, park2019practical}.
 We try to bridge these two extreme assumptions by using the renewal equation.
 However, the renewal equation does not perform better because we test our methods on Gillespie simulations of the SIR model, which assumes an exponentially decreasing generation-time distribution.
-While we might expect the renewal equation to perform better against real data, simulating the renewal equation with narrower shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics (see Appendix A.4).
+Although we might expect the renewal equation to perform better against real data, simulating the renewal equation with narrower shapes suggest that the shape of the generation-interval distribution has little effect on the overall dynamics (see Appendix A.4).
 These results are consistent with previous analysis of measles time series that reported that using non-exponential distributions made small differences to their conclusion \citep{he2009plug}.
 Based on these results, we conclude that trying to estimate the shape of the generation-interval distribution at the expense of power to estimate the transmission rates may not be worth the trouble for measles-like diseases.
 
@@ -650,7 +656,7 @@ Nonetheless, we suggest that any formal analysis should be carried out using sta
 Finally, we suggest using simulations to test mathematical and statistical models of interest before analyzing the real epidemic time series.
 Often, the state-of-art methods such as POMP \citep{king2015statistical}, are taken for granted;
 using simulations allows us to assess model formulations (e.g., parametric forms for the probability of infection) and identify which model assumptions are likely to have important consequences on the inference.
-Rigorous model checking will help scientists make better inference about epidemic processes.
+Rigorous model checking will help scientists make better modeling decisions.
 
 \pagebreak
 
@@ -744,8 +750,5 @@ The circle represents the maximum likelihood estimate.
 Dashed lines represent the 95\% confidence region.
 }
 \end{figure}
-
-
-
 
 \end{document}
