@@ -15,7 +15,7 @@ alldata <- rbind(bs, ld) %>%
 g1 <- ggplot(alldata) +
 	geom_point(aes(decimalYear, cases), size=1, shape=1) +
 	scale_y_continuous("Cases") +
-	scale_x_continuous("Time", breaks=seq(1930, 1970, by=1), expand=c(0,0)) +
+	scale_x_continuous("Date", breaks=seq(1930, 1970, by=1), expand=c(0,0)) +
 	facet_wrap(~loc, scale="free", ncol=1) +
 	theme(
 		strip.background = element_blank(),
